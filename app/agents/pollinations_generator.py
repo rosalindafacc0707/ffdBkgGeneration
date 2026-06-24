@@ -1,21 +1,11 @@
 """
 Pollinations.ai Image Generator
 Genera immagini via Pollinations.ai — completamente gratuito, nessuna API key.
-
-API: GET https://image.pollinations.ai/prompt/{prompt}
-Docs: https://pollinations.ai/
-
-Modelli disponibili (parametro ?model=):
-  flux        → FLUX.1 (default, qualità alta)
-  flux-realism → FLUX.1 orientato al fotorealismo
-  flux-anime  → stile anime
-  turbo       → più veloce, qualità leggermente inferiore
-
-Nessuna dipendenza aggiuntiva — usa solo httpx (già in requirements.txt).
 """
 import logging
 import base64
 import uuid
+import time
 from pathlib import Path
 from urllib.parse import quote
 import httpx
@@ -38,18 +28,17 @@ def _save_image(img_bytes: bytes) -> str:
     filepath = output_dir / filename
     with open(filepath, "wb") as f:
         f.write(img_bytes)
-    logger.info("Pollinations: immagine salvata in '%s'", filepath)
+    logger.info("  [POLLINATIONS]   Image saved: %s", filepath)
     return str(filepath)
 
 
 async def generate_image_pollinations(prompt: str) -> dict:
-    """
-    Chiama Pollinations.ai per generare un'immagine.
-    GET https://image.pollinations.ai/prompt/{prompt}?width=...&height=...&model=flux&nologo=true
-    Risponde direttamente con i byte dell'immagine (PNG/JPEG).
-    """
     model = settings.pollinations_model
-    logger.info("Pollinations: avvio generazione con modello '%s'", model)
+    t0 = time.perf_counter()
+
+    logger.info("  [POLLINATIONS] ▶ Requesting image — model: %s | %dx%d",
+                model, settings.image_width, settings.image_height)
+    logger.info("  [POLLINATIONS]   Prompt length: %d chars", len(prompt))
 
     encoded_prompt = quote(prompt)
     url = POLLINATIONS_BASE_URL.format(prompt=encoded_prompt)
@@ -58,86 +47,56 @@ async def generate_image_pollinations(prompt: str) -> dict:
         "width": settings.image_width,
         "height": settings.image_height,
         "model": model,
-        "nologo": "true",   # rimuove il watermark pollinations
-        "enhance": "false", # non modificare il prompt automaticamente
-        "seed": -1,         # seed casuale
+        "nologo": "true",
+        "enhance": "false",
+        "seed": -1,
     }
 
     try:
-        # Timeout generoso: Pollinations può impiegare 20-40 sec
+        logger.info("  [POLLINATIONS]   Waiting for Pollinations.ai response (up to 120s)…")
         async with httpx.AsyncClient(timeout=120.0, follow_redirects=True) as client:
             resp = await client.get(url, params=params)
 
             if resp.status_code == 429:
-                logger.error(
-                    "Pollinations: rate limit temporaneo (429). Riprova tra qualche secondo."
-                )
-                return {
-                    "image_base64": None,
-                    "image_path": None,
-                    "generation_status": "error",
-                    "generation_model": f"pollinations/{model}",
-                }
+                logger.error("  [POLLINATIONS] ✗ Rate limit hit (429). Wait a moment and retry.")
+                return {"image_base64": None, "image_path": None,
+                        "generation_status": "error", "generation_model": f"pollinations/{model}"}
 
             resp.raise_for_status()
 
             img_bytes = resp.content
             content_type = resp.headers.get("content-type", "")
+            elapsed = time.perf_counter() - t0
 
-            # Verifica che sia davvero un'immagine
             if len(img_bytes) < 1000 or "image" not in content_type:
                 logger.error(
-                    "Pollinations: risposta non valida. "
-                    "Content-Type: %s, Size: %d bytes. Body: %s",
-                    content_type, len(img_bytes), img_bytes[:200]
-                )
-                return {
-                    "image_base64": None,
-                    "image_path": None,
-                    "generation_status": "error",
-                    "generation_model": f"pollinations/{model}",
-                }
+                    "  [POLLINATIONS] ✗ Invalid response. Content-Type: %s | Size: %d bytes",
+                    content_type, len(img_bytes))
+                return {"image_base64": None, "image_path": None,
+                        "generation_status": "error", "generation_model": f"pollinations/{model}"}
 
             image_path = _save_image(img_bytes)
             img_b64 = base64.b64encode(img_bytes).decode()
 
-            logger.info(
-                "Pollinations: immagine generata ✓ (%d KB, model=%s)",
-                len(img_bytes) // 1024, model
-            )
-            return {
-                "image_base64": img_b64,
-                "image_path": image_path,
-                "generation_status": "generated",
-                "generation_model": f"pollinations/{model}",
-            }
+            logger.info("  [POLLINATIONS] ✓ Done in %.1fs | Size: %d KB | model: %s",
+                        elapsed, len(img_bytes) // 1024, model)
+
+            return {"image_base64": img_b64, "image_path": image_path,
+                    "generation_status": "generated", "generation_model": f"pollinations/{model}"}
 
     except httpx.TimeoutException:
-        logger.error(
-            "Pollinations: timeout (120s). Il servizio potrebbe essere sovraccarico. Riprova."
-        )
-        return {
-            "image_base64": None,
-            "image_path": None,
-            "generation_status": "error",
-            "generation_model": f"pollinations/{model}",
-        }
+        elapsed = time.perf_counter() - t0
+        logger.error("  [POLLINATIONS] ✗ Timeout after %.1fs. Service may be overloaded. Retry.", elapsed)
+        return {"image_base64": None, "image_path": None,
+                "generation_status": "error", "generation_model": f"pollinations/{model}"}
     except httpx.HTTPStatusError as e:
-        logger.error(
-            "Pollinations: HTTP error %s: %s",
-            e.response.status_code, e.response.text[:300]
-        )
-        return {
-            "image_base64": None,
-            "image_path": None,
-            "generation_status": "error",
-            "generation_model": f"pollinations/{model}",
-        }
+        elapsed = time.perf_counter() - t0
+        logger.error("  [POLLINATIONS] ✗ HTTP %s after %.1fs: %s",
+                     e.response.status_code, elapsed, e.response.text[:200])
+        return {"image_base64": None, "image_path": None,
+                "generation_status": "error", "generation_model": f"pollinations/{model}"}
     except Exception as e:
-        logger.error("Pollinations: errore inatteso: %s", e)
-        return {
-            "image_base64": None,
-            "image_path": None,
-            "generation_status": "error",
-            "generation_model": f"pollinations/{model}",
-        }
+        elapsed = time.perf_counter() - t0
+        logger.error("  [POLLINATIONS] ✗ Unexpected error after %.1fs: %s", elapsed, e)
+        return {"image_base64": None, "image_path": None,
+                "generation_status": "error", "generation_model": f"pollinations/{model}"}

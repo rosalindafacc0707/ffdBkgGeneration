@@ -5,6 +5,7 @@ Usa ainvoke (async) per permettere vera parallelizzazione con visual_expert.
 """
 import logging
 import json
+import time
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage
 from app.core.config import settings
@@ -29,7 +30,12 @@ ALWAYS and ONLY respond in this exact JSON format (no text outside the JSON):
 async def copywriter_node(state: CampaignState) -> CampaignState:
     """LangGraph node async: copy generation from briefing."""
     briefing = state["briefing"]
-    logger.info("Copywriter: copy generation in progress for the product '%s'", briefing.product)
+    t0 = time.perf_counter()
+
+    logger.info("  [COPYWRITER] ▶ Starting — product: '%s' | model: %s",
+                briefing.product, settings.ollama_llm_model)
+    logger.info("  [COPYWRITER]   Tone of voice : %s", briefing.tone_of_voice)
+    logger.info("  [COPYWRITER]   Audience      : %s", briefing.audience)
 
     llm = ChatOllama(
         base_url=settings.ollama_base_url,
@@ -46,28 +52,34 @@ Season/Period: {briefing.season}
 Audience: {briefing.audience}
 Goal: {briefing.goal}
 Tone of voice: {briefing.tone_of_voice}
-Brand (Optional): {briefing.brand} 
-Campaign name (Optional): {briefing.campaign_name} 
-Key messages (Optional): {briefing.key_messages} 
+Brand (Optional): {briefing.brand}
+Campaign name (Optional): {briefing.campaign_name}
+Key messages (Optional): {briefing.key_messages}
 
 The copy should be strongly related to dermatological and cosmetic aspects and speak directly to the audience using the appropriate tone of voice.
 The copy should always address its objective."""
 
     try:
+        logger.info("  [COPYWRITER]   Calling LLM…")
         response = await llm.ainvoke([
             SystemMessage(content=COPYWRITER_SYSTEM_PROMPT),
             HumanMessage(content=user_prompt),
         ])
+        elapsed = time.perf_counter() - t0
         data = json.loads(response.content)
         copy_result = CopyResult(
             headline=data.get("headline", ""),
             tagline=data.get("tagline", ""),
             copy_text=data.get("copy_text", ""),
         )
-        logger.info("Copywriter: copy successfully generated")
+        logger.info("  [COPYWRITER] ✓ Done in %.1fs", elapsed)
+        logger.info("  [COPYWRITER]   Headline : %s", copy_result.headline)
+        logger.info("  [COPYWRITER]   Tagline  : %s", copy_result.tagline)
+        logger.info("  [COPYWRITER]   Copy     : %s…", copy_result.copy_text[:80])
         return {**state, "copy": copy_result}
 
     except Exception as e:
-        logger.error("Copywriter error: %s", e)
+        elapsed = time.perf_counter() - t0
+        logger.error("  [COPYWRITER] ✗ Failed after %.1fs — %s", elapsed, e)
         errors = state.get("errors", [])
         return {**state, "errors": errors + [f"copywriter_error: {e}"]}

@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FullForce — Ad Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+  <style>
+    /* ── TOKENS ─────────────────────────────────────────────────── */
+    :root {
+      --noir:        #131315;
+      --espresso:    #241515;
+      --surface:     #1a1a1d;
+      --panel:       #1f1f22;
+      --panel-hi:    #26262a;
+      --border:      #2e2e33;
+      --border-hi:   #3e3e45;
+      --blush:       #F9EDEF;
+      --champagne:   #E5C8B6;
+      --cognac:      #C3955A;
+      --amber:       #BA6A37;
+      --cream:       #F3F2EB;
+      --cappuccino:  #EBEAE0;
+      --emerald:     #1C3934;
+      --text:        #e8e6e1;
+      --text-dim:    #7a7876;
+      --text-muted:  #4a4845;
+      --accent:      #C3955A;
+      --accent-glow: rgba(195,149,90,0.15);
+      --success:     #5c9e7f;
+      --error:       #c05a5a;
+      --warning:     #c09a5a;
+      --mono:        'DM Mono', monospace;
+      --sans:        'DM Sans', system-ui, sans-serif;
+      --radius:      6px;
+      --radius-lg:   10px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--noir);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 13px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── LAYOUT ─────────────────────────────────────────────────── */
+    .app {
+      display: grid;
+      grid-template-rows: 48px 1fr;
+      grid-template-columns: 280px 1fr 340px;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Top bar spans all columns */
+    .topbar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 0 20px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-shrink: 0;
+    }
+    .logo-mark {
+      width: 24px; height: 24px;
+      background: var(--accent);
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-mark svg { width: 14px; height: 14px; }
+    .logo-text {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+    .logo-sub {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+
+    .topbar-divider {
+      width: 1px; height: 20px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .topbar-tabs {
+      display: flex;
+      gap: 2px;
+    }
+    .tab-btn {
+      padding: 5px 12px;
+      border: none;
+      background: transparent;
+      color: var(--text-dim);
+      font-family: var(--sans);
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: var(--radius);
+      transition: background 0.15s, color 0.15s;
+    }
+    .tab-btn:hover { background: var(--panel-hi); color: var(--text); }
+    .tab-btn.active { background: var(--panel-hi); color: var(--text); }
+
+    .topbar-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 6px rgba(92,158,127,0.5);
+    }
+    .status-dot.idle { background: var(--text-muted); box-shadow: none; }
+    .status-dot.running {
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent-glow);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .status-label { font-size: 11px; color: var(--text-dim); }
+
+    /* ── LEFT PANEL — Briefing form ─────────────────────────────── */
+    .left-panel {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .panel-title {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .panel-action {
+      font-size: 10px;
+      color: var(--accent);
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: var(--sans);
+      padding: 0;
+    }
+    .panel-action:hover { color: var(--champagne); }
+
+    .panel-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px;
+    }
+    .panel-scroll::-webkit-scrollbar { width: 4px; }
+    .panel-scroll::-webkit-scrollbar-track { background: transparent; }
+    .panel-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ── FORM ─── */
+    .form-section {
+      margin-bottom: 18px;
+    }
+    .form-section-label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .field {
+      margin-bottom: 10px;
+    }
+    .field label {
+      display: block;
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+      font-weight: 400;
+    }
+    .field label .required { color: var(--accent); margin-left: 2px; }
+
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 12px;
+      padding: 7px 9px;
+      outline: none;
+      transition: border-color 0.15s;
+      resize: none;
+    }
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+      border-color: var(--border-hi);
+    }
+    .field textarea { min-height: 56px; }
+
+    .field select option { background: var(--panel); }
+
+    /* PDF upload area */
+    .upload-area {
+      border: 1px dashed var(--border-hi);
+      border-radius: var(--radius);
+      padding: 16px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      position: relative;
+    }
+    .upload-area:hover, .upload-area.drag-over {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+    }
+    .upload-area input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer;
+    }
+    .upload-icon {
+      width: 28px; height: 28px;
+      margin: 0 auto 8px;
+      color: var(--text-muted);
+    }
+    .upload-label { font-size: 12px; color: var(--text-dim); }
+    .upload-sub { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+    .upload-filename {
+      font-size: 11px;
+      color: var(--accent);
+      margin-top: 6px;
+      font-family: var(--mono);
+    }
+
+    /* Extract button */
+    .btn-extract {
+      width: 100%;
+      padding: 8px;
+      background: transparent;
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius);
+      color: var(--text-dim);
+      font-family: var(--sans);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-top: 8px;
+    }
+    .btn-extract:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-extract:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Generate button ─── */
+    .panel-footer {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .btn-generate {
+      width: 100%;
+      padding: 10px;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius);
+      color: var(--noir);
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+      letter-spacing: 0.02em;
+    }
+    .btn-generate:hover:not(:disabled) { background: var(--champagne); }
+    .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── CENTER — Output canvas ─────────────────────────────────── */
+    .center-panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    .canvas-header {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .canvas-label { font-size: 11px; color: var(--text-dim); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+    .canvas-meta { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
+
+    .canvas-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    /* Background preview card */
+    .preview-card {
+      width: 100%;
+      max-width: 640px;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      position: relative;
+    }
+    .preview-img-wrap {
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: var(--panel-hi);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .preview-img-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .preview-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-muted);
+    }
+    .preview-placeholder svg { width: 32px; height: 32px; }
+    .preview-placeholder span { font-size: 11px; }
+
+    /* Overlay copy on image */
+    .copy-overlay {
+      position: absolute;
+      bottom: 20px;
+      left: 24px;
+      right: 24px;
+      pointer-events: none;
+    }
+    .copy-headline {
+      font-size: 22px;
+      font-weight: 300;
+      line-height: 1.2;
+      color: #fff;
+      text-shadow: 0 1px 12px rgba(0,0,0,0.5);
+      letter-spacing: -0.01em;
+      font-style: italic;
+    }
+    .copy-tagline {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.7);
+      margin-top: 6px;
+    }
+
+    .preview-meta {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border);
+    }
+    .preview-model-tag {
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--text-muted);
+    }
+    .btn-download {
+      font-size: 11px;
+      color: var(--accent);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--sans);
+      padding: 0;
+    }
+    .btn-download:hover { color: var(--champagne); }
+
+    /* Copy card */
+    .copy-card {
+      width: 100%;
+      max-width: 640px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .copy-card-header {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .copy-card-body { padding: 16px; }
+
+    .copy-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .copy-row:last-child { margin-bottom: 0; }
+
+    .copy-field-label {
+      width: 70px;
+      flex-shrink: 0;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding-top: 1px;
+    }
+    .copy-field-value {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .copy-field-value.headline { font-size: 15px; font-weight: 300; font-style: italic; }
+    .copy-field-value.tagline { letter-spacing: 0.12em; text-transform: uppercase; font-size: 11px; }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 60px 20px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .empty-state svg { width: 40px; height: 40px; opacity: 0.3; }
+    .empty-state h3 { font-size: 14px; font-weight: 400; color: var(--text-dim); }
+    .empty-state p { font-size: 12px; max-width: 280px; line-height: 1.6; }
+
+    /* Loading shimmer */
+    .shimmer {
+      background: linear-gradient(90deg, var(--panel) 0%, var(--panel-hi) 50%, var(--panel) 100%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius);
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .shimmer-block { height: 14px; margin-bottom: 8px; }
+    .shimmer-img { width: 100%; aspect-ratio: 4/3; }
+
+    /* ── RIGHT PANEL — Agent log ─────────────────────────────────── */
+    .right-panel {
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--panel);
+    }
+
+    .log-header {
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .log-stream {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 0;
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.7;
+    }
+    .log-stream::-webkit-scrollbar { width: 4px; }
+    .log-stream::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .log-entry {
+      padding: 1px 16px;
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+    }
+    .log-entry:hover { background: rgba(255,255,255,0.02); }
+
+    .log-time {
+      color: var(--text-muted);
+      flex-shrink: 0;
+      font-size: 10px;
+    }
+    .log-msg { color: var(--text-dim); word-break: break-word; }
+    .log-msg.info { color: var(--text-dim); }
+    .log-msg.success { color: var(--success); }
+    .log-msg.warn { color: var(--warning); }
+    .log-msg.error { color: var(--error); }
+    .log-msg.accent { color: var(--accent); }
+    .log-msg.header { color: var(--text); font-weight: 400; }
+    .log-msg.dim { color: var(--text-muted); }
+
+    .log-separator {
+      height: 1px;
+      background: var(--border);
+      margin: 6px 16px;
+    }
+
+    .btn-clear-log {
+      font-size: 10px;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--sans);
+      padding: 0;
+    }
+    .btn-clear-log:hover { color: var(--text-dim); }
+
+    /* ── TOAST ──────────────────────────────────────────────────── */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    .toast {
+      background: var(--panel-hi);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--text);
+      max-width: 280px;
+      animation: slideIn 0.2s ease;
+      pointer-events: all;
+    }
+    .toast.error { border-left: 3px solid var(--error); }
+    .toast.success { border-left: 3px solid var(--success); }
+    @keyframes slideIn {
+      from { transform: translateX(20px); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+
+    /* ── Prompt viewer dialog ───────────────────────────────────── */
+    .dialog-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .dialog-backdrop.open { opacity: 1; pointer-events: all; }
+    .dialog {
+      background: var(--panel);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-lg);
+      width: 560px;
+      max-width: 90vw;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .dialog-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .dialog-title { font-size: 12px; font-weight: 500; }
+    .dialog-close {
+      width: 24px; height: 24px;
+      border: none; background: none;
+      color: var(--text-dim); cursor: pointer;
+      border-radius: 4px; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .dialog-close:hover { background: var(--panel-hi); }
+    .dialog-body {
+      padding: 16px 18px;
+      overflow-y: auto;
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--text-dim);
+      font-family: var(--mono);
+    }
+
+    /* ── Palette chip strip ─────────────────────────────────────── */
+    .palette-strip {
+      display: flex;
+      gap: 5px;
+      padding: 0 16px 14px;
+      flex-wrap: wrap;
+    }
+    .palette-chip {
+      width: 18px; height: 18px;
+      border-radius: 3px;
+      border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      position: relative;
+    }
+    .palette-chip::after {
+      content: attr(data-name);
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--panel-hi);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-family: var(--mono);
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+    }
+    .palette-chip:hover::after { opacity: 1; }
+
+    /* Tabs (main view) */
+    #tab-generate { display: block; }
+    #tab-history  { display: none; }
+
+    .history-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      padding: 20px;
+    }
+    .history-item {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .history-item:hover { border-color: var(--border-hi); }
+    .history-item img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+    .history-item-info { padding: 8px 10px; }
+    .history-item-title { font-size: 11px; color: var(--text); font-weight: 400; }
+    .history-item-date { font-size: 10px; color: var(--text-muted); margin-top: 2px; font-family: var(--mono); }
+
+    .history-empty {
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    /* Process steps indicator */
+    .process-steps {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      width: 100%;
+      max-width: 640px;
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      position: relative;
+    }
+    .step::before {
+      content: '';
+      position: absolute;
+      top: 12px;
+      left: calc(50% + 12px);
+      right: calc(-50% + 12px);
+      height: 1px;
+      background: var(--border);
+    }
+    .step:last-child::before { display: none; }
+    .step-dot {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
+      color: var(--text-muted);
+      position: relative;
+      z-index: 1;
+    }
+    .step-dot.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+    .step-dot.done { border-color: var(--success); color: var(--success); background: rgba(92,158,127,0.1); }
+    .step-dot.running { border-color: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+    .step-label { font-size: 10px; color: var(--text-muted); text-align: center; }
+    .step.active .step-label, .step.done .step-label { color: var(--text-dim); }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ── TOP BAR ──────────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="7" width="5" height="6" rx="1" fill="#131315"/>
+          <rect x="8" y="1" width="5" height="12" rx="1" fill="#131315"/>
+          <rect x="1" y="1" width="5" height="4" rx="1" fill="#131315"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">FullForce</div>
+        <div class="logo-sub">Ad Generator</div>
+      </div>
+    </div>
+
+    <div class="topbar-divider"></div>
+
+    <nav class="topbar-tabs">
+      <button class="tab-btn active" onclick="switchTab('generate')">Generate</button>
+      <button class="tab-btn" onclick="switchTab('history')">History</button>
+    </nav>
+
+    <div class="topbar-right">
+      <div class="status-dot idle" id="status-dot"></div>
+      <span class="status-label" id="status-label">Ready</span>
+    </div>
+  </header>
+
+  <!-- ── LEFT PANEL ─────────────────────────────────────────────── -->
+  <aside class="left-panel">
+    <div class="panel-header">
+      <span class="panel-title">Brief</span>
+      <button class="panel-action" onclick="clearForm()">Clear</button>
+    </div>
+
+    <div class="panel-scroll">
+
+      <!-- PDF upload -->
+      <div class="form-section">
+        <div class="form-section-label">Import from PDF</div>
+        <div class="upload-area" id="upload-area">
+          <input type="file" id="pdf-input" accept=".pdf" onchange="onPdfSelected(event)" />
+          <div class="upload-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <line x1="9" y1="15" x2="15" y2="15"/>
+            </svg>
+          </div>
+          <div class="upload-label">Drop PDF brief here</div>
+          <div class="upload-sub">or click to browse</div>
+          <div class="upload-filename" id="pdf-filename"></div>
+        </div>
+        <button class="btn-extract" id="btn-extract" onclick="extractBrief()" disabled>
+          Extract brief insights
+        </button>
+      </div>
+
+      <!-- Manual fields -->
+      <div class="form-section">
+        <div class="form-section-label">Required fields</div>
+
+        <div class="field">
+          <label>Product <span class="required">*</span></label>
+          <input type="text" id="f-product" placeholder="e.g. Regenerating Night Cream 50ml" />
+        </div>
+        <div class="field">
+          <label>Season <span class="required">*</span></label>
+          <input type="text" id="f-season" placeholder="e.g. Winter 2025" />
+        </div>
+        <div class="field">
+          <label>Audience <span class="required">*</span></label>
+          <textarea id="f-audience" placeholder="e.g. Women 35–55, skin-conscious, premium lifestyle"></textarea>
+        </div>
+        <div class="field">
+          <label>Goal <span class="required">*</span></label>
+          <textarea id="f-goal" placeholder="e.g. Increase brand awareness in premium skincare"></textarea>
+        </div>
+        <div class="field">
+          <label>Tone of voice <span class="required">*</span></label>
+          <input type="text" id="f-tone" placeholder="e.g. Sophisticated and reassuring" />
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-label">Optional</div>
+        <div class="field">
+          <label>Brand</label>
+          <input type="text" id="f-brand" placeholder="e.g. Dermalab" />
+        </div>
+        <div class="field">
+          <label>Campaign name</label>
+          <input type="text" id="f-campaign" placeholder="e.g. Winter Ritual 2025" />
+        </div>
+        <div class="field">
+          <label>Key messages</label>
+          <textarea id="f-messages" placeholder="One per line&#10;e.g. Deep skin regeneration&#10;Clinically tested formula" style="min-height:70px;"></textarea>
+        </div>
+      </div>
+
+      <!-- Brand palette -->
+      <div class="form-section">
+        <div class="form-section-label">Brand palette</div>
+        <div class="palette-strip">
+          <div class="palette-chip" style="background:#F9EDEF" data-name="Blush"></div>
+          <div class="palette-chip" style="background:#E5C8B6" data-name="Champagne"></div>
+          <div class="palette-chip" style="background:#C3955A" data-name="Cognac"></div>
+          <div class="palette-chip" style="background:#BA6A37" data-name="Amber"></div>
+          <div class="palette-chip" style="background:#1C3934" data-name="Emerald"></div>
+          <div class="palette-chip" style="background:#131315; border-color:rgba(255,255,255,0.15)" data-name="Noir"></div>
+          <div class="palette-chip" style="background:#241515" data-name="Espresso"></div>
+          <div class="palette-chip" style="background:#EBEAE0" data-name="Cappuccino"></div>
+          <div class="palette-chip" style="background:#F3F2EB" data-name="Cream"></div>
+          <div class="palette-chip" style="background:#F9F9F9" data-name="Flat White"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="panel-footer">
+      <button class="btn-generate" id="btn-generate" onclick="generate()">
+        Generate campaign →
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── CENTER PANEL ─────────────────────────────────────────────── -->
+  <main class="center-panel" id="tab-generate">
+    <div class="canvas-header">
+      <span class="canvas-label">Output</span>
+      <span class="canvas-meta" id="canvas-meta">—</span>
+    </div>
+
+    <div class="canvas-body" id="canvas-body">
+
+      <!-- Empty state -->
+      <div class="empty-state" id="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+        <h3>No campaign yet</h3>
+        <p>Fill in the brief on the left and click Generate campaign to create a copy and background image.</p>
+      </div>
+
+      <!-- Process steps (shown while loading) -->
+      <div class="process-steps" id="process-steps" style="display:none">
+        <div class="step" id="step-brief">
+          <div class="step-dot" id="step-brief-dot">1</div>
+          <div class="step-label">Coordinator</div>
+        </div>
+        <div class="step" id="step-copy">
+          <div class="step-dot" id="step-copy-dot">2</div>
+          <div class="step-label">Copywriter</div>
+        </div>
+        <div class="step" id="step-visual">
+          <div class="step-dot" id="step-visual-dot">3</div>
+          <div class="step-label">Visual Expert</div>
+        </div>
+        <div class="step" id="step-image">
+          <div class="step-dot" id="step-image-dot">4</div>
+          <div class="step-label">Image Gen</div>
+        </div>
+      </div>
+
+      <!-- Loading skeleton -->
+      <div id="skeleton" style="display:none; width:100%; max-width:640px;">
+        <div class="preview-card">
+          <div class="shimmer shimmer-img"></div>
+          <div class="preview-meta">
+            <div class="shimmer shimmer-block" style="width:120px"></div>
+          </div>
+        </div>
+        <div class="copy-card" style="margin-top:16px;">
+          <div class="copy-card-header">Copy</div>
+          <div class="copy-card-body">
+            <div class="shimmer shimmer-block" style="width:80%"></div>
+            <div class="shimmer shimmer-block" style="width:50%"></div>
+            <div class="shimmer shimmer-block" style="width:95%"></div>
+            <div class="shimmer shimmer-block" style="width:70%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="result-wrap" style="display:none; width:100%; max-width:640px;">
+
+        <div class="preview-card" id="result-image-card">
+          <div class="preview-img-wrap" id="result-img-wrap">
+            <div class="preview-placeholder" id="img-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span>Image not generated</span>
+            </div>
+            <img id="result-img" style="display:none" alt="Generated background" />
+            <div class="copy-overlay" id="copy-overlay" style="display:none">
+              <div class="copy-headline" id="overlay-headline"></div>
+              <div class="copy-tagline" id="overlay-tagline"></div>
+            </div>
+          </div>
+          <div class="preview-meta">
+            <span class="preview-model-tag" id="result-model">—</span>
+            <div style="display:flex;gap:12px;align-items:center;">
+              <button class="btn-download" onclick="viewPrompt()">View prompt</button>
+              <button class="btn-download" onclick="downloadImage()">Download PNG</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="copy-card" style="margin-top:16px;">
+          <div class="copy-card-header">Advertising Copy</div>
+          <div class="copy-card-body">
+            <div class="copy-row">
+              <span class="copy-field-label">Headline</span>
+              <span class="copy-field-value headline" id="result-headline">—</span>
+            </div>
+            <div class="copy-row">
+              <span class="copy-field-label">Tagline</span>
+              <span class="copy-field-value tagline" id="result-tagline">—</span>
+            </div>
+            <div class="copy-row">
+              <span class="copy-field-label">Copy</span>
+              <span class="copy-field-value" id="result-copy">—</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- History tab (hidden by default, replaces center panel) -->
+  <main class="center-panel" id="tab-history" style="display:none;">
+    <div class="canvas-header">
+      <span class="canvas-label">History</span>
+      <span class="canvas-meta" id="history-count">0 campaigns</span>
+    </div>
+    <div id="history-body" style="overflow-y:auto; flex:1;">
+      <div class="history-empty" id="history-empty">No campaigns generated yet.</div>
+      <div class="history-grid" id="history-grid" style="display:none;"></div>
+    </div>
+  </main>
+
+  <!-- ── RIGHT PANEL — Agent log ─────────────────────────────────── -->
+  <aside class="right-panel">
+    <div class="log-header">
+      <span class="panel-title">Agent log</span>
+      <button class="btn-clear-log" onclick="clearLog()">Clear</button>
+    </div>
+    <div class="log-stream" id="log-stream">
+      <!-- Log entries injected here -->
+    </div>
+  </aside>
+
+</div>
+
+<!-- ── Prompt viewer dialog ─────────────────────────────────────────── -->
+<div class="dialog-backdrop" id="prompt-dialog" onclick="closeDialog(event)">
+  <div class="dialog">
+    <div class="dialog-header">
+      <span class="dialog-title">FLUX Image Prompt</span>
+      <button class="dialog-close" onclick="closeDialog()">×</button>
+    </div>
+    <div class="dialog-body" id="prompt-dialog-body"></div>
+  </div>
+</div>
+
+<!-- ── Toast container ──────────────────────────────────────────────── -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+/* ── Config ───────────────────────────────────────────────────────── */
+const API_BASE = 'http://localhost:8000/api/v1';
+
+/* ── State ────────────────────────────────────────────────────────── */
+let currentResult = null;
+let isRunning = false;
+let pdfFile = null;
+let history = JSON.parse(localStorage.getItem('ff_history') || '[]');
+
+/* ── Boot ─────────────────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  log('System', 'FullForce Ad Generator ready', 'accent');
+  log('System', `API: ${API_BASE}`, 'dim');
+  renderHistory();
+});
+
+/* ── Tab switching ────────────────────────────────────────────────── */
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-btn')[tab === 'generate' ? 0 : 1].classList.add('active');
+  document.getElementById('tab-generate').style.display = tab === 'generate' ? 'flex' : 'none';
+  document.getElementById('tab-history').style.display  = tab === 'history'  ? 'flex' : 'none';
+}
+
+/* ── PDF handling ─────────────────────────────────────────────────── */
+function onPdfSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  pdfFile = file;
+  document.getElementById('pdf-filename').textContent = file.name;
+  document.getElementById('btn-extract').disabled = false;
+  log('PDF', `File selected: ${file.name} (${(file.size / 1024).toFixed(0)} KB)`, 'info');
+}
+
+// Drag-and-drop
+const uploadArea = document.getElementById('upload-area');
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadArea.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.pdf')) {
+    pdfFile = file;
+    document.getElementById('pdf-filename').textContent = file.name;
+    document.getElementById('btn-extract').disabled = false;
+    log('PDF', `Dropped: ${file.name}`, 'info');
+  }
+});
+
+async function extractBrief() {
+  if (!pdfFile || isRunning) return;
+  setRunning(true);
+  log('─'.repeat(36), '', 'dim');
+  log('Brief Extractor', `▶ Starting PDF extraction`, 'header');
+  log('Brief Extractor', `File: ${pdfFile.name}`, 'info');
+  log('Brief Extractor', `Model: ${document.getElementById('f-product').placeholder || 'llama3.2'}`, 'dim');
+
+  setStep('brief', 'running');
+  setStatus('running', 'Extracting brief…');
+
+  const formData = new FormData();
+  formData.append('file', pdfFile);
+
+  try {
+    const t0 = Date.now();
+    const resp = await fetch(`${API_BASE}/campaign/brief_insights_extraction`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+      throw new Error(err.detail || resp.statusText);
+    }
+
+    const data = await resp.json();
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+    log('Brief Extractor', `✓ Done in ${elapsed}s`, 'success');
+    log('Brief Extractor', `Product: ${data.product}`, 'info');
+    log('Brief Extractor', `Season: ${data.season}`, 'info');
+    log('Brief Extractor', `Brand: ${data.brand || '—'}`, 'dim');
+    log('Brief Extractor', `Key messages: ${(data.key_messages || []).length} found`, 'info');
+
+    // Fill form
+    setField('f-product', data.product);
+    setField('f-season', data.season);
+    setField('f-audience', data.audience);
+    setField('f-goal', data.goal);
+    setField('f-tone', data.tone_of_voice);
+    setField('f-brand', data.brand || '');
+    setField('f-campaign', data.campaign_name || '');
+    setField('f-messages', (data.key_messages || []).join('\n'));
+
+    setStep('brief', 'done');
+    toast('Brief extracted — review and generate.', 'success');
+  } catch (err) {
+    log('Brief Extractor', `✗ Error: ${err.message}`, 'error');
+    setStep('brief', '');
+    toast(`Extraction failed: ${err.message}`, 'error');
+  } finally {
+    setRunning(false);
+    setStatus('idle', 'Ready');
+  }
+}
+
+/* ── Generate ─────────────────────────────────────────────────────── */
+async function generate() {
+  if (isRunning) return;
+
+  const briefing = collectBriefing();
+  if (!briefing) return;
+
+  setRunning(true);
+  showSkeleton();
+  showProcessSteps();
+
+  log('─'.repeat(36), '', 'dim');
+  log('Coordinator', '▶ Campaign started', 'header');
+  log('Coordinator', `Product: ${briefing.product}`, 'info');
+  log('Coordinator', `Season: ${briefing.season}`, 'info');
+  log('Coordinator', `Audience: ${briefing.audience.substring(0, 60)}…`, 'dim');
+  log('Coordinator', `Brand: ${briefing.brand || '—'}`, 'dim');
+  log('Coordinator', '⇉ Launching agents in parallel…', 'accent');
+
+  setStep('brief', 'done');
+  setStep('copy', 'running');
+  setStep('visual', 'running');
+  setStatus('running', 'Generating…');
+
+  // Simulate progressive log updates while waiting
+  const copyTimer = setTimeout(() => {
+    log('Copywriter', '▶ Copy generation in progress…', 'info');
+  }, 400);
+  const visualTimer = setTimeout(() => {
+    log('Visual Expert', '▶ Building FLUX prompt…', 'info');
+  }, 600);
+  const imgTimer = setTimeout(() => {
+    log('Visual Expert', 'Calling image backend…', 'dim');
+    setStep('image', 'running');
+  }, 3000);
+
+  const t0 = Date.now();
+  try {
+    const resp = await fetch(`${API_BASE}/campaign/generate_copy_and_background`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(briefing),
+    });
+
+    clearTimeout(copyTimer);
+    clearTimeout(visualTimer);
+    clearTimeout(imgTimer);
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+      throw new Error(err.detail || resp.statusText);
+    }
+
+    const data = await resp.json();
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+
+    // Log results
+    log('Copywriter', `✓ Done`, 'success');
+    log('Copywriter', `Headline: ${data.copy?.headline}`, 'info');
+    log('Copywriter', `Tagline: ${data.copy?.tagline}`, 'dim');
+
+    log('Visual Expert', `✓ Prompt built`, 'success');
+    const imgStatus = data.visual?.generation_status;
+    if (imgStatus === 'generated') {
+      log('Image Gen', `✓ Image generated | ${data.visual?.generation_model}`, 'success');
+    } else {
+      log('Image Gen', `⚠ Status: ${imgStatus}`, 'warn');
+    }
+    log('Coordinator', `✓ Completed in ${elapsed}s | status: ${data.status}`, 'success');
+
+    setStep('copy', 'done');
+    setStep('visual', 'done');
+    setStep('image', imgStatus === 'generated' ? 'done' : '');
+
+    currentResult = data;
+    saveToHistory(data);
+    renderResult(data, elapsed);
+    setStatus('idle', 'Done');
+
+  } catch (err) {
+    clearTimeout(copyTimer);
+    clearTimeout(visualTimer);
+    clearTimeout(imgTimer);
+
+    log('Coordinator', `✗ Error: ${err.message}`, 'error');
+    hideSkeleton();
+    setStatus('idle', 'Error');
+    toast(`Generation failed: ${err.message}`, 'error');
+  } finally {
+    setRunning(false);
+  }
+}
+
+/* ── Form helpers ─────────────────────────────────────────────────── */
+function collectBriefing() {
+  const product  = get('f-product').trim();
+  const season   = get('f-season').trim();
+  const audience = get('f-audience').trim();
+  const goal     = get('f-goal').trim();
+  const tone     = get('f-tone').trim();
+
+  if (!product || !season || !audience || !goal || !tone) {
+    toast('Please fill in all required fields.', 'error');
+    return null;
+  }
+
+  const messages = get('f-messages').trim();
+  return {
+    product,
+    season,
+    audience,
+    goal,
+    tone_of_voice: tone,
+    brand: get('f-brand').trim() || null,
+    campaign_name: get('f-campaign').trim() || null,
+    key_messages: messages ? messages.split('\n').map(s => s.trim()).filter(Boolean) : null,
+  };
+}
+
+function get(id) { return document.getElementById(id)?.value || ''; }
+function setField(id, val) { const el = document.getElementById(id); if (el) el.value = val || ''; }
+
+function clearForm() {
+  ['f-product','f-season','f-audience','f-goal','f-tone','f-brand','f-campaign','f-messages']
+    .forEach(id => setField(id, ''));
+  pdfFile = null;
+  document.getElementById('pdf-filename').textContent = '';
+  document.getElementById('btn-extract').disabled = true;
+  document.getElementById('pdf-input').value = '';
+}
+
+/* ── Render results ───────────────────────────────────────────────── */
+function renderResult(data, elapsed) {
+  const copy   = data.copy   || {};
+  const visual = data.visual || {};
+
+  document.getElementById('empty-state').style.display    = 'none';
+  document.getElementById('skeleton').style.display       = 'none';
+  document.getElementById('process-steps').style.display  = 'none';
+  document.getElementById('result-wrap').style.display    = 'block';
+
+  document.getElementById('canvas-meta').textContent =
+    `${data.briefing?.product || ''} · ${data.briefing?.season || ''} · ${elapsed}s`;
+
+  // Copy
+  document.getElementById('result-headline').textContent = copy.headline || '—';
+  document.getElementById('result-tagline').textContent  = copy.tagline  || '—';
+  document.getElementById('result-copy').textContent     = copy.copy_text || '—';
+
+  // Overlay
+  if (copy.headline || copy.tagline) {
+    document.getElementById('overlay-headline').textContent = copy.headline || '';
+    document.getElementById('overlay-tagline').textContent  = copy.tagline  || '';
+    document.getElementById('copy-overlay').style.display   = 'flex';
+  }
+
+  // Image
+  if (visual.image_base64) {
+    const img = document.getElementById('result-img');
+    img.src = `data:image/png;base64,${visual.image_base64}`;
+    img.style.display = 'block';
+    document.getElementById('img-placeholder').style.display = 'none';
+  }
+
+  document.getElementById('result-model').textContent =
+    visual.generation_model || '—';
+}
+
+function showSkeleton() {
+  document.getElementById('empty-state').style.display   = 'none';
+  document.getElementById('skeleton').style.display      = 'block';
+  document.getElementById('result-wrap').style.display   = 'none';
+}
+function hideSkeleton() {
+  document.getElementById('skeleton').style.display     = 'none';
+  document.getElementById('empty-state').style.display  = 'flex';
+  document.getElementById('process-steps').style.display = 'none';
+}
+function showProcessSteps() {
+  document.getElementById('process-steps').style.display = 'flex';
+  // reset steps
+  ['brief','copy','visual','image'].forEach(s => setStep(s, ''));
+}
+
+/* ── Steps ────────────────────────────────────────────────────────── */
+function setStep(name, state) {
+  const dot = document.getElementById(`step-${name}-dot`);
+  if (!dot) return;
+  dot.className = 'step-dot' + (state ? ' ' + state : '');
+  if (state === 'done') dot.textContent = '✓';
+}
+
+/* ── Status ───────────────────────────────────────────────────────── */
+function setRunning(val) {
+  isRunning = val;
+  document.getElementById('btn-generate').disabled = val;
+  document.getElementById('btn-extract').disabled = val || !pdfFile;
+}
+function setStatus(state, label) {
+  const dot = document.getElementById('status-dot');
+  dot.className = `status-dot ${state}`;
+  document.getElementById('status-label').textContent = label;
+}
+
+/* ── Log stream ───────────────────────────────────────────────────── */
+function log(agent, msg, type = 'info') {
+  const stream = document.getElementById('log-stream');
+  const now = new Date();
+  const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+
+  if (!msg) {
+    const sep = document.createElement('div');
+    sep.className = 'log-separator';
+    stream.appendChild(sep);
+    stream.scrollTop = stream.scrollHeight;
+    return;
+  }
+
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+
+  const label = agent ? `[${agent}]` : '';
+  const fullMsg = label ? `${label} ${msg}` : msg;
+
+  entry.innerHTML = `
+    <span class="log-time">${time}</span>
+    <span class="log-msg ${type}">${escHtml(fullMsg)}</span>
+  `;
+  stream.appendChild(entry);
+  stream.scrollTop = stream.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('log-stream').innerHTML = '';
+  log('System', 'Log cleared', 'dim');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ── Prompt dialog ────────────────────────────────────────────────── */
+function viewPrompt() {
+  const prompt = currentResult?.visual?.image_prompt;
+  if (!prompt) { toast('No prompt available.', 'error'); return; }
+  document.getElementById('prompt-dialog-body').textContent = prompt;
+  document.getElementById('prompt-dialog').classList.add('open');
+}
+function closeDialog(e) {
+  if (!e || e.target.id === 'prompt-dialog' || e.target.classList.contains('dialog-close')) {
+    document.getElementById('prompt-dialog').classList.remove('open');
+  }
+}
+
+/* ── Download ─────────────────────────────────────────────────────── */
+function downloadImage() {
+  const b64 = currentResult?.visual?.image_base64;
+  if (!b64) { toast('No image to download.', 'error'); return; }
+  const a = document.createElement('a');
+  a.href = `data:image/png;base64,${b64}`;
+  a.download = `fullforce_bg_${Date.now()}.png`;
+  a.click();
+  log('System', 'Image downloaded', 'success');
+}
+
+/* ── History ──────────────────────────────────────────────────────── */
+function saveToHistory(data) {
+  history.unshift({
+    id: Date.now(),
+    date: new Date().toISOString(),
+    product: data.briefing?.product,
+    season: data.briefing?.season,
+    headline: data.copy?.headline,
+    model: data.visual?.generation_model,
+    image_b64: data.visual?.image_base64,
+    status: data.status,
+  });
+  history = history.slice(0, 30); // keep last 30
+  localStorage.setItem('ff_history', JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  const grid = document.getElementById('history-grid');
+  const empty = document.getElementById('history-empty');
+  const count = document.getElementById('history-count');
+  count.textContent = `${history.length} campaign${history.length !== 1 ? 's' : ''}`;
+
+  if (!history.length) {
+    grid.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.style.display = 'grid';
+  grid.innerHTML = history.map(h => `
+    <div class="history-item">
+      ${h.image_b64
+        ? `<img src="data:image/png;base64,${h.image_b64}" alt="${h.product}" />`
+        : `<div style="width:100%;aspect-ratio:4/3;background:var(--panel-hi);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:11px;">No image</div>`}
+      <div class="history-item-info">
+        <div class="history-item-title">${escHtml(h.product || '—')}</div>
+        <div class="history-item-date">${h.season || ''} · ${new Date(h.date).toLocaleDateString()}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ── Toast ────────────────────────────────────────────────────────── */
+function toast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+</script>
+
+</body>
+</html>
