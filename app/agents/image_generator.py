@@ -25,7 +25,8 @@ FLUX_NEGATIVE_PREFIX = (
 
 
 def _apply_flux_prefix(prompt: str) -> str:
-    return FLUX_NEGATIVE_PREFIX + prompt
+    #return FLUX_NEGATIVE_PREFIX + prompt
+    return prompt
 
 
 def _ensure_output_dir() -> Path:
