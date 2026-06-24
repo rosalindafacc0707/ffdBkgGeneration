@@ -16,7 +16,7 @@ FLUX_NEGATIVE_PREFIX = (
     "EMPTY WALL ONLY. "
     "Absolutely no podium, no pedestal, no platform, no riser, no cylinder, no disc, "
     "no circular base, no geometric shape, no 3D object, no product, no cosmetic jar, "
-    "no bottle, no tube, no container, no prop, no plants, no flower, no leaf, "
+    "no bottle, no tube, no container, no prop, no plants, no plant, no flowers, no flower, no leaf, no leaves, no greenery, no foliage, no botanical, "
     "no shelf, no table, no furniture, no floor object, no shadow of any object, "
     "no hands, no people, no text, no logo, no pattern, no tile, no architectural detail. "
     "The frame contains ONLY a flat matte wall with light and shadow gradients. "

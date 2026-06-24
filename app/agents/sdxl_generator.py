@@ -104,7 +104,8 @@ async def generate_image_sdxl(prompt: str) -> dict:
             prompt=prompt,
             negative_prompt=(
                 "people, hands, human elements, products, packaging, text, logos, "
-                "plants, towels, bottles, props, decorative elements, heavy textures, "
+                "plants, plant, flowers, flower, greenery, foliage, botanical, leaves, "
+                "towels, bottles, props, decorative elements, heavy textures, "
                 "visual noise, blurry, low quality, oversaturated, harsh shadows, "
                 "hyper-realistic, CGI look, shiny surfaces, glossy"
             ),

@@ -26,7 +26,7 @@ ABSOLUTE RULES — never break these:
 - Zero objects. Zero props. Zero geometry. Zero 3D shapes.
 - No podium, no pedestal, no platform, no riser, no disc, no cylinder.
 - No footrests, no lifts, no shelves, no tables, no stools, no chairs, no furniture.
-- No products, no bottles, no jars, no plants, no flowers, no decorations.
+- No products, no bottles, no jars, no plants, no flowers, no greenery, no foliage, no botanical elements, no decorations.
 - No people, no hands, no text, no logos, no patterns, no tiles, no architectural details.
 - No reflections, no specular highlights, no gloss, no CGI look.
 - Do NOT use these words in the output: "product", "placement", "compositing", "surface for", "backdrop for".
@@ -72,7 +72,7 @@ async def visual_expert_node(state: CampaignState) -> CampaignState:
 
     user_prompt = f"""Generate a FLUX image prompt for an empty background wall that fits this campaign briefing.
 
-FORBIDDEN WORDS in the output prompt: "product", "placement", "compositing", "backdrop for", "surface for", "podium", "pedestal", "riser", "platform", "shelf", "footrest", "lift", "object", "plant", "flower", "table", "chair".
+FORBIDDEN WORDS in the output prompt: "product", "placement", "compositing", "backdrop for", "surface for", "podium", "pedestal", "riser", "platform", "shelf", "footrest", "lift", "object", "plant", "plants", "flower", "flowers", "greenery", "foliage", "botanical", "table", "chair".
 
 Choose the most evocative wall color and light direction for this product and season.
 Use ONLY brand palette colors: Blush #F9EDEF · Champagne #E5C8B6 · Cognac #C3955A · Amber #BA6A37 · Emerald #1C3934 · Noir #131315 · Espresso #241515 · Cappuccino #EBEAE0 · Cream #F3F2EB · Flat White #F9F9F9
