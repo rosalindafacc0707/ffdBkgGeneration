@@ -40,6 +40,15 @@ class CampaignOutput(BaseModel):
     status: str = "completed"
 
 
+class CopyOnlyOutput(BaseModel):
+    copy: CopyResult
+    status: str = "copy_generated"
+
+
+class VisualOnlyOutput(BaseModel):
+    visual: VisualResult
+    status: str = "visual_generated"
+
 
 class BriefingOriginalDocInput(BaseModel):
     """Input: documento originale del briefing (PDF upload).
@@ -50,11 +59,11 @@ class BriefingOriginalDocInput(BaseModel):
 
 class BriefingJson(BaseModel):
     """Output: structured valid JSON extracted from the original briefing."""
-    product: str = Field(..., description="Name/description of the product")
-    season: str = Field(..., description="Season/period of the campaign")
-    audience: str = Field(..., description="Target audience")
-    goal: str = Field(..., description="Goal of the campaign")
-    tone_of_voice: str = Field(..., description="Tone of voice of the campaign")
+    product: Optional[str] = Field(..., description="Name/description of the product")
+    season: Optional[str] = Field(..., description="Season/period of the campaign")
+    audience: Optional[str] = Field(..., description="Target audience")
+    goal: Optional[str] = Field(..., description="Goal of the campaign")
+    tone_of_voice: Optional[str] = Field(..., description="Tone of voice of the campaign")
 
     brand: Optional[str] = Field(None, description="Brand or company")
     campaign_name: Optional[str] = Field(None, description="Name of the campaign")

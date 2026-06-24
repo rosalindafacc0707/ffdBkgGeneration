@@ -9,7 +9,7 @@ from langgraph.graph import StateGraph, END, START
 from app.agents.state import CampaignState
 from app.agents.copywriter import copywriter_node
 from app.agents.visual_expert import visual_expert_node
-from app.core.schemas import BriefingInput, CampaignOutput
+from app.core.schemas import BriefingInput, CampaignOutput, CopyResult, VisualResult
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -26,6 +26,48 @@ def build_parallel_graph():
     graph.add_edge("copywriter", END)
     graph.add_edge("visual_expert", END)
     return graph.compile()
+
+
+async def run_copy(briefing: BriefingInput) -> CopyResult:
+    logger.info("▶  COPY ONLY — Campaign started")
+    logger.info("   Product      : %s", briefing.product)
+    initial_state: CampaignState = {
+        "briefing": briefing,
+        "copy": None,
+        "visual": None,
+        "errors": [],
+    }
+    final_state = await copywriter_node(initial_state)
+    errors = final_state.get("errors", [])
+    if errors:
+        logger.warning("⚠  COPY ONLY — Completed with %d error(s)", len(errors))
+        raise RuntimeError("; ".join(errors))
+    copy = final_state.get("copy")
+    if copy is None:
+        raise RuntimeError("Copy generation failed")
+    logger.info("✓  COPY ONLY — Copy generated successfully")
+    return copy
+
+
+async def run_visual(briefing: BriefingInput) -> VisualResult:
+    logger.info("▶  VISUAL ONLY — Campaign started")
+    logger.info("   Product      : %s", briefing.product)
+    initial_state: CampaignState = {
+        "briefing": briefing,
+        "copy": None,
+        "visual": None,
+        "errors": [],
+    }
+    final_state = await visual_expert_node(initial_state)
+    errors = final_state.get("errors", [])
+    if errors:
+        logger.warning("⚠  VISUAL ONLY — Completed with %d error(s)", len(errors))
+        raise RuntimeError("; ".join(errors))
+    visual = final_state.get("visual")
+    if visual is None:
+        raise RuntimeError("Visual generation failed")
+    logger.info("✓  VISUAL ONLY — Visual generated successfully")
+    return visual
 
 
 async def run_campaign(briefing: BriefingInput) -> CampaignOutput:

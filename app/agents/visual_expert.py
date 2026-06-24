@@ -17,15 +17,16 @@ logger = logging.getLogger(__name__)
 
 VISUAL_EXPERT_SYSTEM_PROMPT = """You are an Art Director for dermatological and cosmetic advertising, expert in writing optimized prompts for the FLUX image generation model.
 
-YOUR TASK: Write a prompt that generates a completely empty background — a flat matte wall with soft directional light and a barely perceptible floor gradient at the bottom. Nothing else exists in the frame.
+YOUR TASK: Write a prompt that generates a totally empty background — a flat matte wall with soft directional light and a barely perceptible floor gradient at the bottom. Nothing else exists in the frame.
 
 WHAT THE IMAGE MUST BE:
-A smooth flat matte painted wall lit by soft directional light (from left, right, or diagonal). The light creates gentle feathered shadow transitions across the wall surface. Near the bottom of the frame, a very soft tonal gradient suggests the floor — imperceptible, never a hard line.
+A smooth flat matte painted wall lit by soft directional light (from left, right, top, or diagonal). The light creates gentle feathered shadow transitions across the wall surface. Near the bottom of the frame, a very soft tonal gradient suggests the floor — imperceptible, never a hard line.
 
 ABSOLUTE RULES — never break these:
 - Zero objects. Zero props. Zero geometry. Zero 3D shapes.
 - No podium, no pedestal, no platform, no riser, no disc, no cylinder.
-- No products, no bottles, no jars, no plants, no flowers, no shelves, no furniture.
+- No footrests, no lifts, no shelves, no tables, no stools, no chairs, no furniture.
+- No products, no bottles, no jars, no plants, no flowers, no decorations.
 - No people, no hands, no text, no logos, no patterns, no tiles, no architectural details.
 - No reflections, no specular highlights, no gloss, no CGI look.
 - Do NOT use these words in the output: "product", "placement", "compositing", "surface for", "backdrop for".
@@ -71,7 +72,7 @@ async def visual_expert_node(state: CampaignState) -> CampaignState:
 
     user_prompt = f"""Generate a FLUX image prompt for an empty background wall that fits this campaign briefing.
 
-FORBIDDEN WORDS in the output prompt: "product", "placement", "compositing", "backdrop for", "surface for", "podium", "pedestal", "riser", "platform", "shelf", "object".
+FORBIDDEN WORDS in the output prompt: "product", "placement", "compositing", "backdrop for", "surface for", "podium", "pedestal", "riser", "platform", "shelf", "footrest", "lift", "object", "plant", "flower", "table", "chair".
 
 Choose the most evocative wall color and light direction for this product and season.
 Use ONLY brand palette colors: Blush #F9EDEF · Champagne #E5C8B6 · Cognac #C3955A · Amber #BA6A37 · Emerald #1C3934 · Noir #131315 · Espresso #241515 · Cappuccino #EBEAE0 · Cream #F3F2EB · Flat White #F9F9F9

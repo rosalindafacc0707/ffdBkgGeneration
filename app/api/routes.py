@@ -6,8 +6,8 @@ import base64
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, JSONResponse
-from app.core.schemas import BriefingInput, BriefingJson, CampaignOutput
-from app.agents.coordinator import run_campaign
+from app.core.schemas import BriefingInput, BriefingJson, CampaignOutput, CopyOnlyOutput, VisualOnlyOutput
+from app.agents.coordinator import run_campaign, run_copy, run_visual
 from app.agents.brief_extractor import run_generate_brief_json
 
 
@@ -88,9 +88,8 @@ async def generate_brief_json(
     response_model=CampaignOutput,
     summary="Campaign copy & image background generation",
     description=(
-        "Receives a structured JSON briefing and run the agentic system. "
-        "The coordinator calls parallely the copywriter and the visual_expert. This last one calls itself the image_generator."
-        "At the end the agentic system returns a textual copy and a background image for the final human validation."
+        "Receives a structured JSON briefing and runs the full agentic system. "
+        "This returns both the advertising copy and the generated background image."
     ),
 )
 async def generate_campaign(briefing: BriefingInput) -> CampaignOutput:
@@ -101,6 +100,44 @@ async def generate_campaign(briefing: BriefingInput) -> CampaignOutput:
     except Exception as e:
         logger.error("API error: %s", e)
         raise HTTPException(status_code=500, detail=f"Errore generazione campagna: {e}")
+
+
+@router.post(
+    "/campaign/generate_copy",
+    summary="Generate campaign copy only",
+    response_model=CopyOnlyOutput,
+    description=(
+        "Genera solo la parte testuale della campagna (headline/tagline/copy). "
+        "This endpoint returns copy immediately while image generation can run later."
+    ),
+)
+async def generate_copy(briefing: BriefingInput):
+    try:
+        logger.info("API: richiesta copy per prodotto '%s'", briefing.product)
+        copy_result = await run_copy(briefing)
+        return {"copy": copy_result, "status": "copy_generated"}
+    except Exception as e:
+        logger.error("API error: %s", e)
+        raise HTTPException(status_code=500, detail=f"Errore generazione copy: {e}")
+
+
+@router.post(
+    "/campaign/generate_background",
+    summary="Generate campaign background image only",
+    response_model=VisualOnlyOutput,
+    description=(
+        "Generates only the visual background image from an existing briefing. "
+        "Use this after copy has been returned to generate the image in a separate request."
+    ),
+)
+async def generate_background(briefing: BriefingInput):
+    try:
+        logger.info("API: richiesta immagine per prodotto '%s'", briefing.product)
+        visual_result = await run_visual(briefing)
+        return {"visual": visual_result, "status": "visual_generated"}
+    except Exception as e:
+        logger.error("API error: %s", e)
+        raise HTTPException(status_code=500, detail=f"Errore generazione immagine: {e}")
 
 
 @router.get(

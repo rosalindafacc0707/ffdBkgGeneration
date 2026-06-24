@@ -41,22 +41,24 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
-      height: 100%;
+      min-height: 100%;
       background: var(--noir);
       color: var(--text);
       font-family: var(--sans);
       font-size: 13px;
       line-height: 1.55;
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
 
     /* ── LAYOUT ─────────────────────────────────────────────────── */
     .app {
       display: grid;
-      grid-template-rows: 48px 1fr;
+      grid-template-rows: 48px auto;
       grid-template-columns: 280px 1fr 340px;
-      height: 100vh;
-      overflow: hidden;
+      min-height: 100vh;
+      overflow: visible;
     }
 
     /* Top bar spans all columns */
@@ -316,7 +318,7 @@
     .center-panel {
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      overflow: visible;
       background: var(--surface);
     }
 
@@ -333,12 +335,13 @@
 
     .canvas-body {
       flex: 1;
-      overflow-y: auto;
+      overflow-y: visible;
       padding: 28px;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: stretch;
       gap: 24px;
+      min-height: 0;
     }
 
     /* Background preview card */
@@ -374,6 +377,55 @@
     }
     .preview-placeholder svg { width: 32px; height: 32px; }
     .preview-placeholder span { font-size: 11px; }
+    .preview-placeholder.loading {
+      color: var(--text);
+    }
+    .preview-placeholder.loading svg {
+      animation: spin 1.2s linear infinite;
+    }
+    .preview-placeholder.loading span {
+      color: var(--text);
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .copy-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .copy-card-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .btn-copy {
+      font-size: 10px;
+      padding: 6px 10px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-copy:hover {
+      border-color: var(--accent);
+      background: rgba(195,149,90,0.08);
+    }
+    .copy-field-value[contenteditable="true"] {
+      outline: none;
+      cursor: text;
+    }
+    .copy-field-value.editable {
+      border: 1px dashed rgba(195,149,90,0.7);
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: rgba(195,149,90,0.05);
+    }
 
     /* Overlay copy on image */
     .copy-overlay {
@@ -953,7 +1005,7 @@
                 <circle cx="8.5" cy="8.5" r="1.5"/>
                 <polyline points="21 15 16 10 5 21"/>
               </svg>
-              <span>Image not generated</span>
+              <span id="img-placeholder-text">Image not generated</span>
             </div>
             <img id="result-img" style="display:none" alt="Generated background" />
             <div class="copy-overlay" id="copy-overlay" style="display:none">
@@ -971,7 +1023,12 @@
         </div>
 
         <div class="copy-card" style="margin-top:16px;">
-          <div class="copy-card-header">Advertising Copy</div>
+          <div class="copy-card-header">
+            <span>Advertising Copy</span>
+            <div class="copy-card-actions">
+              <button class="btn-copy" onclick="copyCampaignCopy()">Copy text</button>
+            </div>
+          </div>
           <div class="copy-card-body">
             <div class="copy-row">
               <span class="copy-field-label">Headline</span>
@@ -1038,6 +1095,7 @@ const API_BASE = 'http://localhost:8000/api/v1';
 
 /* ── State ────────────────────────────────────────────────────────── */
 let currentResult = null;
+let currentBriefing = null;
 let isRunning = false;
 let pdfFile = null;
 let history = JSON.parse(localStorage.getItem('ff_history') || '[]');
@@ -1145,6 +1203,7 @@ async function generate() {
 
   const briefing = collectBriefing();
   if (!briefing) return;
+  currentBriefing = briefing;
 
   setRunning(true);
   showSkeleton();
@@ -1156,28 +1215,24 @@ async function generate() {
   log('Coordinator', `Season: ${briefing.season}`, 'info');
   log('Coordinator', `Audience: ${briefing.audience.substring(0, 60)}…`, 'dim');
   log('Coordinator', `Brand: ${briefing.brand || '—'}`, 'dim');
-  log('Coordinator', '⇉ Launching agents in parallel…', 'accent');
+  log('Coordinator', '⇉ Generating copy first, then background image…', 'accent');
 
   setStep('brief', 'done');
   setStep('copy', 'running');
   setStep('visual', 'running');
-  setStatus('running', 'Generating…');
+  setStatus('running', 'Generating copy…');
 
-  // Simulate progressive log updates while waiting
   const copyTimer = setTimeout(() => {
     log('Copywriter', '▶ Copy generation in progress…', 'info');
   }, 400);
   const visualTimer = setTimeout(() => {
-    log('Visual Expert', '▶ Building FLUX prompt…', 'info');
-  }, 600);
-  const imgTimer = setTimeout(() => {
-    log('Visual Expert', 'Calling image backend…', 'dim');
-    setStep('image', 'running');
-  }, 3000);
+    log('Visual Expert', '▶ Preparing background generation…', 'dim');
+  }, 800);
 
   const t0 = Date.now();
+
   try {
-    const resp = await fetch(`${API_BASE}/campaign/generate_copy_and_background`, {
+    const resp = await fetch(`${API_BASE}/campaign/generate_copy`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(briefing),
@@ -1185,43 +1240,69 @@ async function generate() {
 
     clearTimeout(copyTimer);
     clearTimeout(visualTimer);
-    clearTimeout(imgTimer);
 
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({ detail: resp.statusText }));
       throw new Error(err.detail || resp.statusText);
     }
 
-    const data = await resp.json();
-    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+    const copyData = await resp.json();
+    const elapsedCopy = ((Date.now() - t0) / 1000).toFixed(1);
 
-    // Log results
-    log('Copywriter', `✓ Done`, 'success');
-    log('Copywriter', `Headline: ${data.copy?.headline}`, 'info');
-    log('Copywriter', `Tagline: ${data.copy?.tagline}`, 'dim');
+    log('Copywriter', `✓ Done in ${elapsedCopy}s`, 'success');
+    log('Copywriter', `Headline: ${copyData.copy?.headline}`, 'info');
+    log('Copywriter', `Tagline: ${copyData.copy?.tagline}`, 'dim');
 
-    log('Visual Expert', `✓ Prompt built`, 'success');
-    const imgStatus = data.visual?.generation_status;
-    if (imgStatus === 'generated') {
-      log('Image Gen', `✓ Image generated | ${data.visual?.generation_model}`, 'success');
-    } else {
-      log('Image Gen', `⚠ Status: ${imgStatus}`, 'warn');
-    }
-    log('Coordinator', `✓ Completed in ${elapsed}s | status: ${data.status}`, 'success');
+    currentResult = {
+      briefing,
+      copy: copyData.copy,
+      visual: {},
+      status: copyData.status,
+    };
+    renderResult(currentResult, elapsedCopy);
+    saveToHistory(currentResult);
 
     setStep('copy', 'done');
-    setStep('visual', 'done');
-    setStep('image', imgStatus === 'generated' ? 'done' : '');
+    setStatus('running', 'Generating background image…');
+    setStep('image', 'running');
 
-    currentResult = data;
-    saveToHistory(data);
-    renderResult(data, elapsed);
+    const imgResp = await fetch(`${API_BASE}/campaign/generate_background`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(briefing),
+    });
+
+    if (!imgResp.ok) {
+      const err = await imgResp.json().catch(() => ({ detail: imgResp.statusText }));
+      throw new Error(err.detail || imgResp.statusText);
+    }
+
+    const visualData = await imgResp.json();
+    const elapsedTotal = ((Date.now() - t0) / 1000).toFixed(1);
+
+    log('Visual Expert', `✓ Background generated`, 'success');
+    log('Visual Expert', `Model: ${visualData.visual?.generation_model || '—'}`, 'info');
+
+    currentResult.visual = visualData.visual;
+    currentResult.status = visualData.status;
+    renderResult(currentResult, elapsedTotal);
+
+    setStep('visual', 'done');
+    setStep('image', 'done');
     setStatus('idle', 'Done');
 
   } catch (err) {
     clearTimeout(copyTimer);
     clearTimeout(visualTimer);
-    clearTimeout(imgTimer);
+
+    if (currentResult?.copy) {
+      log('Visual Expert', `⚠ Image generation stopped: ${err.message}`, 'warn');
+      setStep('visual', 'done');
+      setStep('image', '');
+      setStatus('idle', 'Copy ready — image failed');
+      toast(`Background generation failed: ${err.message}`, 'error');
+      return;
+    }
 
     log('Coordinator', `✗ Error: ${err.message}`, 'error');
     hideSkeleton();
@@ -1284,9 +1365,18 @@ function renderResult(data, elapsed) {
     `${data.briefing?.product || ''} · ${data.briefing?.season || ''} · ${elapsed}s`;
 
   // Copy
-  document.getElementById('result-headline').textContent = copy.headline || '—';
-  document.getElementById('result-tagline').textContent  = copy.tagline  || '—';
-  document.getElementById('result-copy').textContent     = copy.copy_text || '—';
+  const headlineEl = document.getElementById('result-headline');
+  const taglineEl = document.getElementById('result-tagline');
+  const copyEl = document.getElementById('result-copy');
+
+  headlineEl.textContent = copy.headline || '—';
+  taglineEl.textContent  = copy.tagline  || '—';
+  copyEl.textContent     = copy.copy_text || '—';
+
+  [headlineEl, taglineEl, copyEl].forEach(el => {
+    el.setAttribute('contenteditable', 'true');
+    el.classList.add('editable');
+  });
 
   // Overlay
   if (copy.headline || copy.tagline) {
@@ -1296,15 +1386,53 @@ function renderResult(data, elapsed) {
   }
 
   // Image
+  const img = document.getElementById('result-img');
+  const placeholder = document.getElementById('img-placeholder');
+  const placeholderText = document.getElementById('img-placeholder-text');
+
   if (visual.image_base64) {
-    const img = document.getElementById('result-img');
     img.src = `data:image/png;base64,${visual.image_base64}`;
     img.style.display = 'block';
-    document.getElementById('img-placeholder').style.display = 'none';
+    placeholder.style.display = 'none';
+    placeholder.classList.remove('loading');
+    placeholderText.textContent = 'Image generated';
+  } else {
+    img.style.display = 'none';
+    placeholder.style.display = 'flex';
+    const waiting = data.status === 'copy_generated';
+    placeholder.classList.toggle('loading', waiting);
+    placeholderText.textContent = waiting
+      ? 'Waiting for image generation…'
+      : 'Image not generated';
+
+    if (waiting) {
+      window.requestAnimationFrame(() => {
+        const copyRow = document.getElementById('result-copy');
+        if (copyRow) {
+          copyRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    }
   }
 
   document.getElementById('result-model').textContent =
     visual.generation_model || '—';
+}
+
+function copyCampaignCopy() {
+  const headline = document.getElementById('result-headline')?.textContent || '';
+  const tagline = document.getElementById('result-tagline')?.textContent || '';
+  const copyText = document.getElementById('result-copy')?.textContent || '';
+  const fullCopy = `${headline}\n\n${tagline}\n\n${copyText}`.trim();
+
+  if (!fullCopy) {
+    toast('Nothing to copy yet.', 'error');
+    return;
+  }
+
+  navigator.clipboard.writeText(fullCopy)
+    .then(() => toast('Copy text copied to clipboard.', 'success'))
+    .catch(() => toast('Unable to copy text.', 'error'));
 }
 
 function showSkeleton() {
