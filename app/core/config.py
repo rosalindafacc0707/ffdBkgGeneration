@@ -14,9 +14,7 @@ class Settings(BaseSettings):
     #   "ollama"         → Ollama locale, nessun token
     #   "pollinations"   → Pollinations.ai, gratuito, nessun token  ← DEFAULT
     #   "hf_inference"   → HuggingFace Inference API (richiede crediti)
-    #   "sdxl"           → SDXL via diffusers locale (~6.5 GB)
-    #   "flux_schnell"   → FLUX.1-schnell via diffusers locale (~17 GB)
-    image_backend: Literal["ollama", "pollinations", "hf_inference", "sdxl", "flux_schnell"] = Field(
+    image_backend: Literal["ollama", "pollinations", "hf_inference"] = Field(
         "pollinations", env="IMAGE_BACKEND"
     )
 
@@ -24,7 +22,7 @@ class Settings(BaseSettings):
     # Modelli: flux (default), flux-realism, flux-anime, turbo
     pollinations_model: str = Field("flux", env="POLLINATIONS_MODEL")
 
-    # HuggingFace — per hf_inference e flux_schnell
+    # HuggingFace — per hf_inference
     hf_token: Optional[str] = Field(None, env="HF_TOKEN")
     hf_inference_model: str = Field(
         "black-forest-labs/FLUX.1-schnell", env="HF_INFERENCE_MODEL"
@@ -34,14 +32,6 @@ class Settings(BaseSettings):
     image_output_dir: str = Field("output/images", env="IMAGE_OUTPUT_DIR")
     image_width: int = Field(1024, env="IMAGE_WIDTH")
     image_height: int = Field(768, env="IMAGE_HEIGHT")
-
-    # SDXL (diffusers locale)
-    sdxl_num_inference_steps: int = Field(30, env="SDXL_NUM_INFERENCE_STEPS")
-    sdxl_guidance_scale: float = Field(7.5, env="SDXL_GUIDANCE_SCALE")
-
-    # Flux Schnell (diffusers locale)
-    flux_num_inference_steps: int = Field(4, env="FLUX_NUM_INFERENCE_STEPS")
-    flux_guidance_scale: float = Field(0.0, env="FLUX_GUIDANCE_SCALE")
 
     # App
     app_host: str = Field("0.0.0.0", env="APP_HOST")

@@ -136,8 +136,6 @@ POLLINATIONS_MODEL=flux        # flux | flux-realism | flux-anime | turbo
 |---|---|---|
 | `ollama` | Modello image installato localmente | `OLLAMA_IMAGE_MODEL=x/z-image-turbo` |
 | `hf_inference` | HF_TOKEN + crediti HF | Piano free esauribile |
-| `flux_schnell` | HF_TOKEN Fine-grained + ~16 GB RAM | `pip install -r requirements-flux.txt` |
-| `sdxl` | ~6.5 GB RAM | `pip install -r requirements-flux.txt` |
 
 ---
 
@@ -159,7 +157,7 @@ FLUX_NEGATIVE_PREFIX = (
 )
 ```
 
-Applicato automaticamente su `pollinations`, `hf_inference`, `flux_schnell`. Non va incluso nel prompt di Gemma.
+Applicato automaticamente su `pollinations` e `hf_inference`. Non va incluso nel prompt di Gemma.
 
 ---
 
@@ -189,7 +187,6 @@ fullforce_ad_generator/
 ├── .env.example
 ├── .gitignore
 ├── requirements.txt                    ← dipendenze base (include pymupdf)
-├── requirements-flux.txt               ← dipendenze per flux_schnell / sdxl
 ├── main.py
 ├── README.md
 ├── app/
@@ -206,8 +203,6 @@ fullforce_ad_generator/
 │   │   ├── image_generator.py          ← router backend + FLUX_NEGATIVE_PREFIX
 │   │   ├── pollinations_generator.py   ← backend Pollinations.ai (default)
 │   │   ├── hf_inference_generator.py   ← backend HuggingFace Inference API
-│   │   ├── flux_schnell_generator.py   ← backend FLUX.1-schnell via diffusers
-│   │   └── sdxl_generator.py           ← backend SDXL via diffusers
 │   ├── api/
 │   │   └── routes.py                   ← tutti gli endpoint FastAPI
 │   └── mcp/
@@ -349,15 +344,13 @@ curl -X POST http://localhost:8000/mcp/call \
 | `OLLAMA_LLM_MODEL` | `llama3.2` | LLM per copywriter e brief extractor |
 | `OLLAMA_VISION_MODEL` | `gemma4:e4b` | LLM per costruire il prompt visivo |
 | `OLLAMA_IMAGE_MODEL` | `x/z-image-turbo` | Modello image (solo `IMAGE_BACKEND=ollama`) |
-| `IMAGE_BACKEND` | `pollinations` | Backend: `pollinations` \| `ollama` \| `hf_inference` \| `flux_schnell` \| `sdxl` |
+| `IMAGE_BACKEND` | `pollinations` | Backend: `pollinations` \| `ollama` \| `hf_inference` |
 | `POLLINATIONS_MODEL` | `flux` | Modello Pollinations: `flux` \| `flux-realism` \| `flux-anime` \| `turbo` |
-| `HF_TOKEN` | — | Token HuggingFace (solo `hf_inference` e `flux_schnell`) |
+| `HF_TOKEN` | — | Token HuggingFace (solo `hf_inference`) |
 | `HF_INFERENCE_MODEL` | `black-forest-labs/FLUX.1-schnell` | Modello HF Inference API |
 | `IMAGE_OUTPUT_DIR` | `output/images` | Cartella salvataggio immagini |
 | `IMAGE_WIDTH` | `1024` | Larghezza immagine in pixel |
 | `IMAGE_HEIGHT` | `768` | Altezza immagine in pixel |
-| `FLUX_NUM_INFERENCE_STEPS` | `4` | Step inferenza (solo `flux_schnell`) |
-| `FLUX_GUIDANCE_SCALE` | `0.0` | Guidance scale (solo `flux_schnell`) |
 | `APP_HOST` | `0.0.0.0` | Host FastAPI |
 | `APP_PORT` | `8000` | Porta FastAPI |
 | `LOG_LEVEL` | `info` | Livello log: `debug` \| `info` \| `warning` \| `error` |

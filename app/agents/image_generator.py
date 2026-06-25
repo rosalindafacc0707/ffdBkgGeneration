@@ -125,16 +125,5 @@ async def generate_image_from_prompt(prompt: str) -> dict:
         from app.agents.hf_inference_generator import generate_image_hf_inference
         return await generate_image_hf_inference(flux_prompt)
 
-    if backend == "flux_schnell":
-        flux_prompt = _apply_flux_prefix(prompt)
-        logger.info("  [IMAGE ROUTER]   FLUX negative prefix applied")
-        from app.agents.flux_schnell_generator import generate_image_flux_schnell
-        return await generate_image_flux_schnell(flux_prompt)
-
-    if backend == "sdxl":
-        logger.info("  [IMAGE ROUTER]   SDXL — no FLUX prefix applied")
-        from app.agents.sdxl_generator import generate_image_sdxl
-        return await generate_image_sdxl(prompt)
-
     # default: ollama
     return await _generate_via_ollama(prompt)

@@ -1,8 +1,0 @@
-# Dipendenze aggiuntive per IMAGE_BACKEND=flux_schnell
-# Installa con: pip install -r requirements-flux.txt
-torch>=2.3.0
-diffusers>=0.30.0
-transformers>=4.44.0
-accelerate>=0.33.0
-sentencepiece>=0.2.0
-huggingface_hub>=0.24.0
