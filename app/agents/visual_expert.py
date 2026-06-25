@@ -15,36 +15,35 @@ from app.agents.image_generator import generate_image_from_prompt
 
 logger = logging.getLogger(__name__)
 
-VISUAL_EXPERT_SYSTEM_PROMPT = """You are an Art Director for dermatological and cosmetic advertising, expert in writing optimized prompts for the FLUX image generation model.
+VISUAL_EXPERT_SYSTEM_PROMPT = """Act as a master of architectural minimalism and studio photography. Your absolute priority is formal purity. When generating a scene, your goal is to eliminate everything non-essential, leaving only pure geometric forms and clean material textures. Do not add any props, plants, decorations, furniture, or extraneous elements under any circumstances. Focus exclusively on the wall texture, light angles, and clean geometry. Use contrast and cast shadows to provide depth instead of physical objects. Ensure the scene is completely pristine, uniform, and empty.
 
-YOUR TASK: Write a prompt that generates a totally empty background — a flat matte wall with soft directional light and a barely perceptible floor gradient at the bottom. Nothing else exists in the frame.
+YOUR TASK: Write a hyper-realistic, ultra-minimalist studio photography prompt for FLUX that depicts ONLY the intersection of a flat floor and a vertical background wall. The image must be completely vacant — no objects, no props, no decorations of any kind.
 
 WHAT THE IMAGE MUST BE:
-A smooth flat matte painted wall lit by soft directional light (from left, right, top, or diagonal). The light creates gentle feathered shadow transitions across the wall surface. Near the bottom of the frame, a very soft tonal gradient suggests the floor — imperceptible, never a hard line.
+A smooth flat matte wall meeting a clean floor at a subtle right angle. The texture must be matte and tactile, like fine plaster or limewash. Soft yet dramatic directional light from a window grid or slatted blinds may project a sharp, clean diagonal shadow across the wall and floor — this shadow is the ONLY visual element besides the empty architecture. Near the bottom of the frame, a very soft tonal gradient suggests the floor meeting the wall.
 
 ABSOLUTE RULES — never break these:
-- Zero objects. Zero props. Zero geometry. Zero 3D shapes.
-- No podium, no pedestal, no platform, no riser, no disc, no cylinder.
-- No footrests, no lifts, no shelves, no tables, no stools, no chairs, no furniture.
-- No products, no bottles, no jars, no plants, no flowers, no greenery, no foliage, no botanical elements, no decorations.
-- No people, no hands, no text, no logos, no patterns, no tiles, no architectural details.
+- Zero objects. Zero props. Zero geometry other than the wall-floor intersection.
+- No podium, no pedestal, no platform, no riser, no disc, no cylinder, no shelf.
+- No products, no bottles, no jars, no plants, no flowers, no greenery, no foliage, no decorations.
+- No people, no hands, no text, no logos, no patterns, no tiles.
 - No reflections, no specular highlights, no gloss, no CGI look.
 - Do NOT use these words in the output: "product", "placement", "compositing", "surface for", "backdrop for".
 
-LIGHT: Soft directional light from left, right, top, or diagonal — freely chosen based on mood. Feathered shadows only, never sharp or geometric.
+LIGHT: Soft yet dramatic directional light. A sharp clean diagonal shadow from a window grid or slatted blinds is PERMITTED and encouraged — it provides depth without objects. All other shadows must be feathered, never geometric.
 
 STRICT BRAND PALETTE — use ONLY these colors, no exceptions:
 Blush #F9EDEF · Champagne #E5C8B6 · Cognac #C3955A · Amber #BA6A37
 Emerald #1C3934 · Noir #131315 · Espresso #241515
 Cappuccino #EBEAE0 · Cream #F3F2EB · Flat White #F9F9F9
 
-Choose ONE dominant wall color and optionally ONE secondary color for shadow depth.
+Choose ONE dominant wall/floor color from the palette, optionally ONE secondary color for shadow depth.
 
 PROMPT FORMAT:
-- Start with: "Flat matte [color] wall, soft [direction] light..."
-- Minimum 60 words, in English
-- Describe: wall color, light direction, shadow behavior, atmosphere
-- Always end with: "completely empty, no objects, no geometry, flat matte wall, matte finish, no reflections, barely perceptible tonal floor gradient at the bottom"
+- Start with: "A hyper-realistic, ultra-minimalist studio photograph of an empty interior space."
+- Describe: wall/floor color and texture, light direction, shadow behavior (including any window-grid shadow), atmosphere
+- Minimum 70 words, in English
+- Always end with: "Strictly no objects, no props, no plants, no furniture, no decorations. The space is completely vacant. Matte finish, no reflections, no gloss."
 
 Respond ONLY in this JSON format:
 {
@@ -52,14 +51,15 @@ Respond ONLY in this JSON format:
 }
 """
 
+
 async def visual_expert_node(state: CampaignState) -> CampaignState:
     """LangGraph node async: generates visual prompt + background image."""
     briefing = state["briefing"]
     t0 = time.perf_counter()
 
-    logger.info("  [VISUAL EXPERT] ▶ Starting — product: '%s' | vision model: %s",
+    logger.info(" [VISUAL EXPERT] ▶ Starting — product: '%s' | vision model: %s",
                 briefing.product, settings.ollama_vision_model)
-    logger.info("  [VISUAL EXPERT]   Season  : %s | Goal: %s",
+    logger.info(" [VISUAL EXPERT] Season : %s | Goal: %s",
                 briefing.season, briefing.goal[:60] if briefing.goal else "—")
 
     llm = ChatOllama(
@@ -70,12 +70,14 @@ async def visual_expert_node(state: CampaignState) -> CampaignState:
         keep_alive=-1,
     )
 
-    user_prompt = f"""Generate a FLUX image prompt for an empty background wall that fits this campaign briefing.
+    user_prompt = f"""Generate a FLUX image prompt for a completely empty minimalist studio background that fits this campaign briefing in terms of color mood and atmosphere.
 
-FORBIDDEN WORDS in the output prompt: "product", "placement", "compositing", "backdrop for", "surface for", "podium", "pedestal", "riser", "platform", "shelf", "footrest", "lift", "object", "plant", "plants", "flower", "flowers", "greenery", "foliage", "botanical", "table", "chair".
+FORBIDDEN WORDS in the output prompt: "product", "placement", "compositing", "backdrop for", "surface for", "podium", "pedestal", "riser", "platform", "shelf", "footrest", "lift", "object", "plant", "plants", "flower", "flowers", "greenery", "foliage", "botanical", "table", "chair", "furniture", "decoration", "vase", "frame".
 
-Choose the most evocative wall color and light direction for this product and season.
+Choose the most evocative wall/floor color and light direction for this product and season.
 Use ONLY brand palette colors: Blush #F9EDEF · Champagne #E5C8B6 · Cognac #C3955A · Amber #BA6A37 · Emerald #1C3934 · Noir #131315 · Espresso #241515 · Cappuccino #EBEAE0 · Cream #F3F2EB · Flat White #F9F9F9
+
+A diagonal shadow from a window grid or slatted blinds is ENCOURAGED if it suits the season and mood — it adds drama without objects.
 
 Campaign briefing:
 - Product: {briefing.product}
@@ -88,13 +90,15 @@ Campaign briefing:
 - Key messages: {", ".join(briefing.key_messages) if briefing.key_messages else "N/A"}
 
 The output prompt MUST:
-- Start with: "Flat matte [color] wall, soft [direction] light..."
-- Describe wall color, light direction, shadow gradient, atmosphere
-- End with: "completely empty, no objects, no geometry, flat matte wall, matte finish, no reflections, barely perceptible tonal floor gradient at the bottom"
-- Contain zero forbidden words"""
+- Start with: "A hyper-realistic, ultra-minimalist studio photograph of an empty interior space."
+- Describe wall/floor color and texture (matte, plaster-like), light direction, shadow behavior
+- Optionally describe a sharp clean diagonal shadow from window grid/slatted blinds
+- End with: "Strictly no objects, no props, no plants, no furniture, no decorations. The space is completely vacant. Matte finish, no reflections, no gloss."
+- Contain zero forbidden words
+- Be minimum 70 words in English"""
 
     try:
-        logger.info("  [VISUAL EXPERT]   Step 1/2 — Building FLUX prompt via LLM…")
+        logger.info(" [VISUAL EXPERT] Step 1/2 — Building FLUX prompt via LLM…")
         t_prompt = time.perf_counter()
         response = await llm.ainvoke([
             SystemMessage(content=VISUAL_EXPERT_SYSTEM_PROMPT),
@@ -104,11 +108,11 @@ The output prompt MUST:
         data = json.loads(response.content)
         image_prompt = data.get("image_prompt", "")
 
-        logger.info("  [VISUAL EXPERT]   Prompt ready in %.1fs (%d chars)",
+        logger.info(" [VISUAL EXPERT] Prompt ready in %.1fs (%d chars)",
                     elapsed_prompt, len(image_prompt))
-        logger.info("  [VISUAL EXPERT]   Prompt preview: %s…", image_prompt[:100])
+        logger.info(" [VISUAL EXPERT] Prompt preview: %s…", image_prompt[:100])
 
-        logger.info("  [VISUAL EXPERT]   Step 2/2 — Generating image via backend '%s'…",
+        logger.info(" [VISUAL EXPERT] Step 2/2 — Generating image via backend '%s'…",
                     settings.image_backend)
         t_img = time.perf_counter()
         gen_result = await generate_image_from_prompt(image_prompt)
@@ -119,15 +123,15 @@ The output prompt MUST:
         path = gen_result.get("image_path")
 
         if status == "generated":
-            logger.info("  [VISUAL EXPERT] ✓ Image generated in %.1fs | model: %s", elapsed_img, model)
+            logger.info(" [VISUAL EXPERT] ✓ Image generated in %.1fs | model: %s", elapsed_img, model)
             if path:
-                logger.info("  [VISUAL EXPERT]   Saved to: %s", path)
+                logger.info(" [VISUAL EXPERT] Saved to: %s", path)
         else:
-            logger.warning("  [VISUAL EXPERT] ⚠ Image generation status: %s | model: %s",
+            logger.warning(" [VISUAL EXPERT] ⚠ Image generation status: %s | model: %s",
                            status, model)
 
         elapsed_total = time.perf_counter() - t0
-        logger.info("  [VISUAL EXPERT] ✓ Done in %.1fs total", elapsed_total)
+        logger.info(" [VISUAL EXPERT] ✓ Done in %.1fs total", elapsed_total)
 
         visual_result = VisualResult(
             image_prompt=image_prompt,
@@ -136,11 +140,10 @@ The output prompt MUST:
             generation_status=status,
             generation_model=model,
         )
-
         return {**state, "visual": visual_result}
 
     except Exception as e:
         elapsed = time.perf_counter() - t0
-        logger.error("  [VISUAL EXPERT] ✗ Failed after %.1fs — %s", elapsed, e)
+        logger.error(" [VISUAL EXPERT] ✗ Failed after %.1fs — %s", elapsed, e)
         errors = state.get("errors", [])
         return {**state, "errors": errors + [f"visual_expert_error: {e}"]}

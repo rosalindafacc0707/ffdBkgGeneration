@@ -12,21 +12,22 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-FLUX_NEGATIVE_PREFIX = (
-    "EMPTY WALL ONLY. "
-    "Absolutely no podium, no pedestal, no platform, no riser, no cylinder, no disc, "
-    "no circular base, no geometric shape, no 3D object, no product, no cosmetic jar, "
-    "no bottle, no tube, no container, no prop, no plants, no plant, no flowers, no flower, no leaf, no leaves, no greenery, no foliage, no botanical, "
-    "no shelf, no table, no furniture, no floor object, no shadow of any object, "
-    "no hands, no people, no text, no logo, no pattern, no tile, no architectural detail. "
-    "The frame contains ONLY a flat matte wall with light and shadow gradients. "
-    "Zero objects. Zero props. Zero geometry. Pure empty background. "
+# Suffisso negativo compatto — aggiunto IN CODA al prompt (più efficace su FLUX)
+# Applicato solo per backend pollinations e hf_inference
+FLUX_NEGATIVE_SUFFIX = (
+    " | negative: podium, pedestal, platform, riser, cylinder, disc, "
+    "product, bottle, jar, tube, container, "
+    "plant, plants, flower, flowers, greenery, foliage, botanical, "
+    "shelf, table, furniture, chair, stool, props, decorations, vase, frame, "
+    "hands, people, text, logo, pattern, tile, "
+    "reflections, gloss, specular, CGI, 3D render, "
+    "architectural detail, window frame, door"
 )
 
 
-def _apply_flux_prefix(prompt: str) -> str:
-    #return FLUX_NEGATIVE_PREFIX + prompt
-    return prompt
+def _apply_flux_suffix(prompt: str) -> str:
+    """Appende il negative suffix al prompt — attivo per pollinations e hf_inference."""
+    return FLUX_NEGATIVE_SUFFIX + prompt
 
 
 def _ensure_output_dir() -> Path:
@@ -41,7 +42,7 @@ def _save_image(img_b64: str) -> str:
     filepath = output_dir / filename
     with open(filepath, "wb") as f:
         f.write(base64.b64decode(img_b64))
-    logger.info("  [IMAGE ROUTER]   Saved: %s", filepath)
+    logger.info(" [IMAGE ROUTER] Saved: %s", filepath)
     return str(filepath)
 
 
@@ -57,8 +58,8 @@ def _is_valid_base64(s: str) -> bool:
 
 async def _generate_via_ollama(prompt: str) -> dict:
     model = settings.ollama_image_model
-    logger.info("  [IMAGE ROUTER]   Ollama image model: %s", model)
-    logger.info("  [IMAGE ROUTER]   Resolution: %dx%d", settings.image_width, settings.image_height)
+    logger.info(" [IMAGE ROUTER] Ollama image model: %s", model)
+    logger.info(" [IMAGE ROUTER] Resolution: %dx%d", settings.image_width, settings.image_height)
 
     payload = {
         "model": model,
@@ -85,45 +86,50 @@ async def _generate_via_ollama(prompt: str) -> dict:
             img_b64 = data["response"]
 
         if not img_b64:
-            logger.warning("  [IMAGE ROUTER] ⚠ No image in Ollama response after %.1fs. Fields: %s",
+            logger.warning(" [IMAGE ROUTER] ⚠ No image in Ollama response after %.1fs. Fields: %s",
                            elapsed, list(data.keys()))
             return {"image_base64": None, "image_path": None,
                     "generation_status": "prompt_only", "generation_model": model}
 
         image_path = _save_image(img_b64)
-        logger.info("  [IMAGE ROUTER] ✓ Ollama image generated in %.1fs", elapsed)
+        logger.info(" [IMAGE ROUTER] ✓ Ollama image generated in %.1fs", elapsed)
         return {"image_base64": img_b64, "image_path": image_path,
                 "generation_status": "generated", "generation_model": model}
 
     except httpx.HTTPStatusError as e:
         error_body = e.response.text
-        logger.error("  [IMAGE ROUTER] ✗ Ollama HTTP %s: %s", e.response.status_code, error_body[:200])
+        logger.error(" [IMAGE ROUTER] ✗ Ollama HTTP %s: %s", e.response.status_code, error_body[:200])
         if "GiB" in error_body or "memory" in error_body.lower():
-            logger.error("  [IMAGE ROUTER]   Insufficient RAM for '%s'. Try IMAGE_BACKEND=pollinations", model)
+            logger.error(" [IMAGE ROUTER] Insufficient RAM for '%s'. Try IMAGE_BACKEND=pollinations", model)
         return {"image_base64": None, "image_path": None,
                 "generation_status": "error", "generation_model": model}
     except Exception as e:
-        logger.error("  [IMAGE ROUTER] ✗ Ollama error: %s", e)
+        logger.error(" [IMAGE ROUTER] ✗ Ollama error: %s", e)
         return {"image_base64": None, "image_path": None,
                 "generation_status": "error", "generation_model": model}
 
 
 async def generate_image_from_prompt(prompt: str) -> dict:
     backend = settings.image_backend
-    logger.info("  [IMAGE ROUTER] ▶ Backend: '%s' | Resolution: %dx%d",
+    logger.info(" [IMAGE ROUTER] ▶ Backend: '%s' | Resolution: %dx%d",
                 backend, settings.image_width, settings.image_height)
 
     if backend == "pollinations":
-        flux_prompt = _apply_flux_prefix(prompt)
-        logger.info("  [IMAGE ROUTER]   FLUX negative prefix applied (%d chars total)", len(flux_prompt))
+        final_prompt = _apply_flux_suffix(prompt)
+        logger.info(" [IMAGE ROUTER] Negative suffix applied (%d chars total)", len(final_prompt))
         from app.agents.pollinations_generator import generate_image_pollinations
-        return await generate_image_pollinations(flux_prompt)
+        return await generate_image_pollinations(final_prompt)
 
     if backend == "hf_inference":
-        flux_prompt = _apply_flux_prefix(prompt)
-        logger.info("  [IMAGE ROUTER]   FLUX negative prefix applied")
+        logger.info(" [IMAGE ROUTER] hf_inference — prompt passato diretto (no suffix testuale)")
         from app.agents.hf_inference_generator import generate_image_hf_inference
-        return await generate_image_hf_inference(flux_prompt)
+        return await generate_image_hf_inference(prompt)
 
-    # default: ollama
+    if backend == "onedrive":
+        logger.info(" [IMAGE ROUTER] OneDrive selector — folder: %s | model: %s",
+                    settings.onedrive_images_dir, settings.onedrive_vlm_model)
+        from app.agents.onedrive_selector import select_image_from_onedrive
+        return await select_image_from_onedrive(prompt)
+
+    # default: ollama generativo (nessun suffix — gestito nativamente dal modello)
     return await _generate_via_ollama(prompt)

@@ -14,10 +14,17 @@ class Settings(BaseSettings):
     #   "ollama"         → Ollama locale, nessun token
     #   "pollinations"   → Pollinations.ai, gratuito, nessun token  ← DEFAULT
     #   "hf_inference"   → HuggingFace Inference API (richiede crediti)
-    image_backend: Literal["ollama", "pollinations", "hf_inference"] = Field(
+    #   "onedrive"       → onedrive
+    image_backend: Literal["ollama", "pollinations", "hf_inference", "onedrive"] = Field(
         "pollinations", env="IMAGE_BACKEND"
     )
 
+    # OneDrive Image Selector
+    onedrive_images_dir: str = Field(
+        "/Users/tuonome/OneDrive/CampaignImages", env="ONEDRIVE_IMAGES_DIR"
+    )
+    onedrive_vlm_model: str = Field("gemma4:12b", env="ONEDRIVE_VLM_MODEL")
+    
     # Pollinations.ai — nessuna API key richiesta
     # Modelli: flux (default), flux-realism, flux-anime, turbo
     pollinations_model: str = Field("flux", env="POLLINATIONS_MODEL")
