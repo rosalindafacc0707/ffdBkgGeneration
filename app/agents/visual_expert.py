@@ -1,7 +1,10 @@
 """
 Visual Expert Agent — async.
-1. Constructs optimized visual prompt via LLM
+1. Constructs optimized visual prompt via LLM (gemma4:e4b)
 2. Generates background image via image_generator (async)
+
+TARGET AESTHETIC: Infinity cove studio — seamless wall-to-floor curve, warm matte plaster,
+diagonal window light beam, soft gradient falloff. Zero objects. Pack-shot ready.
 """
 import logging
 import json
@@ -13,43 +16,54 @@ from app.core.schemas import VisualResult
 from app.agents.state import CampaignState
 from app.agents.image_generator import generate_image_from_prompt
 
+
 logger = logging.getLogger(__name__)
 
-VISUAL_EXPERT_SYSTEM_PROMPT = """Act as a master of architectural minimalism and studio photography. Your absolute priority is formal purity. When generating a scene, your goal is to eliminate everything non-essential, leaving only pure geometric forms and clean material textures. Do not add any props, plants, decorations, furniture, or extraneous elements under any circumstances. Focus exclusively on the wall texture, light angles, and clean geometry. Use soft ambient gradients to provide depth instead of physical objects or cast shadows. Ensure the scene is completely pristine, uniform, and empty.
 
-YOUR TASK: Write a hyper-realistic, ultra-minimalist studio photography prompt for FLUX that depicts ONLY the seamless intersection of a flat floor and a vertical background wall — an infinity cove. The image must be completely vacant — no objects, no props, no decorations of any kind.
+VISUAL_EXPERT_SYSTEM_PROMPT = """You are a commercial photography art director and FLUX prompt engineer.
+Your only task is to write a dense, technically precise FLUX prompt that generates a studio infinity cove background — completely empty, ready for pack-shot product compositing.
 
-WHAT THE IMAGE MUST BE:
-A smooth, seamless matte wall curving into a clean floor — a classic photography infinity cove (cyclorama). The texture must be matte and tactile, like fine plaster or limewash. Light is soft, warm, and diffused — coming gently from one side — creating a subtle gradient across the wall. The floor is slightly lighter in tone. There are NO cast shadows from any external source, NO window shapes, NO grid patterns, NO geometric shadow lines on the wall. Depth is created ONLY through tonal gradient and soft ambient falloff.
+TARGET LOOK — study this reference carefully:
+A warm matte plaster infinity cove. The wall and floor are seamlessly curved, no visible horizon line.
+A sharp diagonal shaft of studio raking light enters from the upper-left, casting a bright angled beam across the wall surface.
+The beam has soft feathered edges. No windows, no window frames, no window reflections are ever visible.
+Surrounding areas fall into warm shadow creating strong tonal contrast.
+The floor is slightly lighter and more diffused. The overall palette is warm and editorial — Amber, Cognac, or Champagne tones.
+The surface feels tactile: limewash plaster or fine microcement. Matte. No gloss.
+No objects. No furniture. No plants. No people. No text. Completely empty.
+ABSOLUTE RULES:
+- NO windows, NO window frames, NO window shapes, NO window reflections visible anywhere in the frame.
+- Light source is NEVER visible — only its effect on the wall surface is shown.
 
-ABSOLUTE RULES — never break these:
-- Zero objects. Zero props. Zero geometry other than the wall-floor seamless curve.
-- No podium, no pedestal, no platform, no riser, no disc, no cylinder, no shelf.
-- No products, no bottles, no jars, no plants, no flowers, no greenery, no foliage, no decorations.
-- No people, no hands, no text, no logos, no patterns, no tiles.
-- No reflections, no specular highlights, no gloss, no CGI look.
-- NO window shadows, NO blind shadows, NO grid shadows, NO slatted shadows, NO geometric shadow patterns of any kind.
-- Do NOT use these words in the output: "product", "placement", "compositing", "surface for", "backdrop for", "window", "blind", "slat", "grid shadow".
+TECHNICAL PROMPT REQUIREMENTS:
+- Dense, comma-separated technical descriptors — NOT narrative sentences
+- Use cinematography and photography vocabulary: "infinity cove", "limewash plaster", "raking light", "feathered penumbra", "tonal falloff", "cyclorama", "soft-box fill", "warm key light", "ambient occlusion corners"
+- Specify color in hex or precise color names aligned with the brand palette
+- Specify the light: direction, quality (hard/soft), beam angle, shadow behavior
+- Specify the material: texture, finish (matte/satin), grain
+- The diagonal window light beam IS ALLOWED and ENCOURAGED — it creates the signature editorial look
+- Minimum 80 words, maximum 140 words
 
-LIGHT: Soft, warm, diffused ambient light from one side. Light fades naturally across the wall creating a gentle gradient. NO sharp shadows. NO geometric cast shadows. Depth comes from tonal falloff only.
-
-STRICT BRAND PALETTE — use ONLY these colors, no exceptions:
+STRICT BRAND PALETTE — choose the most fitting for the campaign mood:
 Blush #F9EDEF · Champagne #E5C8B6 · Cognac #C3955A · Amber #BA6A37
 Emerald #1C3934 · Noir #131315 · Espresso #241515
 Cappuccino #EBEAE0 · Cream #F3F2EB · Flat White #F9F9F9
 
-Choose ONE dominant wall/floor color from the palette, optionally ONE secondary color for tonal depth.
+FORBIDDEN WORDS — never include in output:
+product, placement, compositing, backdrop for, surface for, podium, pedestal, riser,
+platform, shelf, object, vase, bottle, jar, plant, flower, foliage, furniture, decoration, table, chair, person, hand, text, logo,
+window, windows, window frame, window light, window beam, blind, blinds, slat, slatted, grid shadow, natural light
 
-PROMPT FORMAT:
-- Start with: "A hyper-realistic, ultra-minimalist studio photograph of an empty infinity cove interior."
-- Describe: wall/floor color and texture, light direction and soft gradient behavior, seamless floor-wall curve
-- Minimum 70 words, in English
-- Always end with: "Strictly no objects, no props, no plants, no furniture, no decorations, no window shadows, no geometric shadows. The space is completely vacant. Matte finish, no reflections, no gloss."
-
-Respond ONLY in this JSON format:
+OUTPUT FORMAT — respond ONLY in this JSON:
 {
   "image_prompt": "prompt in english"
 }
+"""
+
+
+REFERENCE_PROMPT_EXAMPLE = """
+REFERENCE EXAMPLE of a correct output prompt (Amber/Cognac palette):
+\"Infinity cove studio, seamless limewash plaster wall curving into matte floor, warm Amber #BA6A37 dominant tone, Cognac #C3955A shadow gradient, sharp diagonal studio raking light from upper-left, off-axis key light at 45-degree angle, feathered penumbra edges, no windows visible, bright illuminated wall panel upper-left, deep warm shadow lower-right, floor slightly lighter in Champagne #E5C8B6, tonal falloff from highlight to shadow, tactile microcement surface grain, ultra-matte finish, zero specular, no reflections, ambient occlusion in wall-floor corner curve, cyclorama backdrop, completely empty, no objects, no props, no decorations, studio photography, 4K, photorealistic, shot on Phase One camera\"
 """
 
 
@@ -60,27 +74,24 @@ async def visual_expert_node(state: CampaignState) -> CampaignState:
 
     logger.info(" [VISUAL EXPERT] ▶ Starting — product: '%s' | vision model: %s",
                 briefing.product, settings.ollama_vision_model)
-    logger.info(" [VISUAL EXPERT] Season : %s | Goal: %s",
-                briefing.season, briefing.goal[:60] if briefing.goal else "—")
+    logger.info(" [VISUAL EXPERT]   Season: %s | Tone: %s",
+                briefing.season, (briefing.tone_of_voice or "—")[:60])
 
     llm = ChatOllama(
         base_url=settings.ollama_base_url,
         model=settings.ollama_vision_model,
-        temperature=0.7,
+        temperature=0.6,
         format="json",
         keep_alive=-1,
     )
 
-    user_prompt = f"""Generate a FLUX image prompt for a completely empty minimalist studio background that fits this campaign briefing in terms of color mood and atmosphere.
+    user_prompt = f"""Generate a FLUX image prompt for a completely empty studio infinity cove background.
+The aesthetic target is: warm matte plaster infinity cove, sharp diagonal light beam from upper-left, not strong tonal contrast between lit and shadow areas, pack-shot ready, zero objects.
 
-FORBIDDEN WORDS in the output prompt: "product", "placement", "compositing", "backdrop for", "surface for", "podium", "pedestal", "riser", "platform", "shelf", "footrest", "lift", "object", "plant", "plants", "flower", "flowers", "greenery", "foliage", "botanical", "table", "chair", "furniture", "decoration", "vase", "frame".
+Select the most fitting palette colors for this campaign's mood and season from:
+Blush #F9EDEF · Champagne #E5C8B6 · Cognac #C3955A · Amber #BA6A37 · Emerald #1C3934 · Noir #131315 · Espresso #241515 · Cappuccino #EBEAE0 · Cream #F3F2EB · Flat White #F9F9F9
 
-Choose the most evocative wall/floor color and light direction for this product and season.
-Use ONLY brand palette colors: Blush #F9EDEF · Champagne #E5C8B6 · Cognac #C3955A · Amber #BA6A37 · Emerald #1C3934 · Noir #131315 · Espresso #241515 · Cappuccino #EBEAE0 · Cream #F3F2EB · Flat White #F9F9F9
-
-A diagonal shadow from a window grid or slatted blinds is ENCOURAGED if it suits the season and mood — it adds drama without objects.
-
-Campaign briefing:
+CAMPAIGN BRIEFING:
 - Product: {briefing.product}
 - Season: {briefing.season}
 - Audience: {briefing.audience}
@@ -90,28 +101,32 @@ Campaign briefing:
 - Campaign name: {briefing.campaign_name or "N/A"}
 - Key messages: {", ".join(briefing.key_messages) if briefing.key_messages else "N/A"}
 
-The output prompt MUST:
-- Start with: "A hyper-realistic, ultra-minimalist studio photograph of an empty interior space."
-- Describe wall/floor color and texture (matte, plaster-like), light direction, shadow behavior
-- Optionally describe a sharp clean diagonal shadow from window grid/slatted blinds
-- End with: "Strictly no objects, no props, no plants, no furniture, no decorations. The space is completely vacant. Matte finish, no reflections, no gloss."
-- Contain zero forbidden words
-- Be minimum 70 words in English"""
+PROMPT STRUCTURE — follow this exact pattern, replacing values for the campaign:
+"Infinity cove studio, seamless [MATERIAL] wall curving into matte floor, [DOMINANT COLOR + HEX] dominant tone, [SECONDARY COLOR + HEX] shadow gradient, sharp diagonal studio raking light from upper-[LEFT or RIGHT], off-axis key light at [ANGLE]-degree angle, feathered penumbra edges, no windows visible, bright illuminated wall panel upper-[SIDE], deep warm shadow lower-[SIDE], floor slightly lighter in [FLOOR COLOR + HEX], tonal falloff from highlight to shadow, tactile [TEXTURE] surface grain, ultra-matte finish, zero specular, no reflections, ambient occlusion in wall-floor corner curve, cyclorama backdrop, completely empty, no objects, no props, no decorations, studio photography, 4K, photorealistic, shot on Phase One camera"
+
+Adapt material (limewash plaster / microcement / fine stucco / tadelakt), colors, light direction, and angle to best match the campaign mood and season.
+
+{REFERENCE_PROMPT_EXAMPLE}
+
+FORBIDDEN WORDS — never use: product, placement, compositing, backdrop for, surface for, podium, pedestal, riser, platform, shelf, object, vase, bottle, jar, plant, flower, foliage, furniture, decoration, table, chair, person, hand, text, logo"""
 
     try:
-        logger.info(" [VISUAL EXPERT] Step 1/2 — Building FLUX prompt via LLM…")
+        logger.info(" [VISUAL EXPERT] Step 1/2 — Building FLUX prompt via %s…",
+                    settings.ollama_vision_model)
         t_prompt = time.perf_counter()
+
         response = await llm.ainvoke([
             SystemMessage(content=VISUAL_EXPERT_SYSTEM_PROMPT),
             HumanMessage(content=user_prompt),
         ])
+
         elapsed_prompt = time.perf_counter() - t_prompt
         data = json.loads(response.content)
         image_prompt = data.get("image_prompt", "")
 
-        logger.info(" [VISUAL EXPERT] Prompt ready in %.1fs (%d chars)",
+        logger.info(" [VISUAL EXPERT]   Prompt ready in %.1fs (%d chars)",
                     elapsed_prompt, len(image_prompt))
-        logger.info(" [VISUAL EXPERT] Prompt preview: %s…", image_prompt[:100])
+        logger.info(" [VISUAL EXPERT]   Prompt preview: %s…", image_prompt[:120])
 
         logger.info(" [VISUAL EXPERT] Step 2/2 — Generating image via backend '%s'…",
                     settings.image_backend)
@@ -124,12 +139,12 @@ The output prompt MUST:
         path = gen_result.get("image_path")
 
         if status == "generated":
-            logger.info(" [VISUAL EXPERT] ✓ Image generated in %.1fs | model: %s", elapsed_img, model)
+            logger.info(" [VISUAL EXPERT] ✓ Image generated in %.1fs | model: %s",
+                        elapsed_img, model)
             if path:
-                logger.info(" [VISUAL EXPERT] Saved to: %s", path)
+                logger.info(" [VISUAL EXPERT]   Saved to: %s", path)
         else:
-            logger.warning(" [VISUAL EXPERT] ⚠ Image generation status: %s | model: %s",
-                           status, model)
+            logger.warning(" [VISUAL EXPERT] ⚠ Image status: %s | model: %s", status, model)
 
         elapsed_total = time.perf_counter() - t0
         logger.info(" [VISUAL EXPERT] ✓ Done in %.1fs total", elapsed_total)
