@@ -1,6 +1,6 @@
 """
-MCP Server endpoint
-Espone /mcp/tools (lista tool) e /mcp/call (esecuzione tool).
+MCP Server endpoint.
+Exposes /mcp/tools (tool list) and /mcp/call (tool execution).
 """
 import base64
 import logging

@@ -1,7 +1,7 @@
 """
-Visual Expert Agent — async
-1. Costruisce prompt visivo ottimizzato via LLM
-2. Genera l'immagine background via image_generator (async)
+Visual Expert Agent — async.
+1. Constructs optimized visual prompt via LLM
+2. Generates background image via image_generator (async)
 """
 import logging
 import json

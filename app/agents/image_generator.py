@@ -1,6 +1,6 @@
 """
-Image Generator — Router
-Smista la generazione immagine al backend configurato in IMAGE_BACKEND (.env).
+Image Generator — Router.
+Routes image generation to the backend configured in IMAGE_BACKEND (.env).
 """
 import logging
 import base64

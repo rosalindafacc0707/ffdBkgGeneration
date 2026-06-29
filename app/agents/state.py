@@ -1,40 +1,40 @@
 """
-CampaignState — stato condiviso del grafo LangGraph.
+CampaignState — shared state of the LangGraph graph.
 
-Per l'esecuzione parallela (fan-out), LangGraph richiede che i campi
-che possono essere scritti da più nodi usino `Annotated` con una
-funzione di merge. Senza, lancia INVALID_CONCURRENT_GRAPH_UPDATE.
+For parallel execution (fan-out), LangGraph requires that fields
+which can be written by multiple nodes use `Annotated` with a
+merge function. Without it, it raises INVALID_CONCURRENT_GRAPH_UPDATE.
 
-Strategia:
-- briefing:  immutabile, non viene mai riscritto dai nodi → nessun merge necessario,
-             ma usiamo `keep_first` per sicurezza
-- copy:      scritto solo da copywriter → `keep_last` (sovrascrive None)
-- visual:    scritto solo da visual_expert → `keep_last` (sovrascrive None)
-- errors:    scritto da entrambi → `merge_lists` (accumula tutti gli errori)
+Strategy:
+- briefing:  immutable, never overwritten by nodes → no merge needed,
+             but we use `keep_first` for safety
+- copy:      written only by copywriter → `keep_last` (overwrites None)
+- visual:    written only by visual_expert → `keep_last` (overwrites None)
+- errors:    written by both → `merge_lists` (accumulates all errors)
 """
 from typing import Optional, Annotated
 from typing_extensions import TypedDict
 from app.core.schemas import BriefingInput, CopyResult, VisualResult
 
 
-# ── Funzioni di merge ────────────────────────────────────────────────────────
+# ── Merge Functions ────────────────────────────────────────────────────────
 
 def keep_first(a, b):
-    """Tieni il primo valore non-None. Usato per campi immutabili."""
+    """Keep the first non-None value. Used for immutable fields."""
     return a if a is not None else b
 
 
 def keep_last(a, b):
-    """Tieni l'ultimo valore non-None. Usato per campi scritti da un solo nodo."""
+    """Keep the last non-None value. Used for fields written by a single node."""
     return b if b is not None else a
 
 
 def merge_lists(a: list, b: list) -> list:
-    """Unisce due liste. Usato per errors (scritto da entrambi i nodi)."""
+    """Merges two lists. Used for errors (written by both nodes)."""
     return (a or []) + (b or [])
 
 
-# ── State ────────────────────────────────────────────────────────────────────
+# ── State ────────────────────────────────────────────────────────────────
 
 class CampaignState(TypedDict):
     briefing: Annotated[Optional[BriefingInput], keep_first]

@@ -1,7 +1,7 @@
 """
-Coordinator Agent — LangGraph
-Esegue copywriter e visual_expert in PARALLELO (fan-out da START),
-raccoglie i risultati (fan-in su END) e restituisce CampaignOutput.
+Coordinator Agent — LangGraph.
+Executes copywriter and visual_expert in PARALLEL (fan-out from START),
+collects results (fan-in on END) and returns CampaignOutput.
 """
 import logging
 import time

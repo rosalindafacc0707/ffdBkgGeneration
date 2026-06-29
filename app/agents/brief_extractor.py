@@ -1,7 +1,7 @@
 """
-Brief Extractor Agent
-Riceve un file PDF di briefing, lo legge, e usa Ollama per estrarre
-un JSON strutturato con i campi richiesti da BriefingJson.
+Brief Extractor Agent.
+Receives a briefing PDF file, reads it, and uses Ollama to extract
+a structured JSON with the fields required by BriefingJson.
 """
 import json
 import logging

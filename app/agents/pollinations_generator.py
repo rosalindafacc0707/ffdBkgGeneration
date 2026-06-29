@@ -1,6 +1,6 @@
 """
-Pollinations.ai Image Generator
-Genera immagini via Pollinations.ai — completamente gratuito, nessuna API key.
+Pollinations.ai Image Generator.
+Generates images via Pollinations.ai — completely free, no API key.
 """
 import logging
 import base64

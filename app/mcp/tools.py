@@ -14,19 +14,19 @@ class MCPTool(BaseModel):
 EXTRACT_BRIEF_TOOL = MCPTool(
     name="extract_brief_from_pdf",
     description=(
-        "Estrae un briefing strutturato da un PDF di briefing di campagna. "
-        "Restituisce product, season, audience, goal, tone_of_voice e altri insight rilevanti."
+        "Extracts a structured briefing from a campaign briefing PDF. "
+        "Returns product, season, audience, goal, tone_of_voice and other relevant insights."
     ),
     input_schema={
         "type": "object",
         "properties": {
             "pdf_base64": {
                 "type": "string",
-                "description": "Contenuto del PDF in base64. Il file viene elaborato dal backend.",
+                "description": "PDF content in base64. The file is processed by the backend.",
             },
             "filename": {
                 "type": "string",
-                "description": "Nome del file PDF da elaborare, ad esempio briefing.pdf",
+                "description": "Name of the PDF file to process, e.g. briefing.pdf",
             },
         },
         "required": ["pdf_base64", "filename"],
@@ -36,24 +36,24 @@ EXTRACT_BRIEF_TOOL = MCPTool(
 GENERATE_CAMPAIGN_TOOL = MCPTool(
     name="generate_campaign",
     description=(
-        "Genera copy pubblicitario e immagine di background per una campagna "
-        "pubblicitaria partendo da un briefing strutturato. "
-        "Restituisce headline, tagline, copy testuale e immagine background PNG."
+        "Generates advertising copy and background image for an advertising campaign "
+        "starting from a structured briefing. "
+        "Returns headline, tagline, text copy and background image PNG."
     ),
     input_schema={
         "type": "object",
         "properties": {
-            "product": {"type": "string", "description": "Nome/descrizione del prodotto"},
-            "season": {"type": "string", "description": "Stagione o periodo della campagna"},
+            "product": {"type": "string", "description": "Product name/description"},
+            "season": {"type": "string", "description": "Campaign season or period"},
             "audience": {"type": "string", "description": "Target audience"},
-            "goal": {"type": "string", "description": "Obiettivo della campagna"},
-            "tone_of_voice": {"type": "string", "description": "Tono della campagna"},
-            "brand": {"type": "string", "description": "Brand o azienda"},
-            "campaign_name": {"type": "string", "description": "Nome della campagna"},
+            "goal": {"type": "string", "description": "Campaign objective"},
+            "tone_of_voice": {"type": "string", "description": "Campaign tone"},
+            "brand": {"type": "string", "description": "Brand or company"},
+            "campaign_name": {"type": "string", "description": "Campaign name"},
             "key_messages": {
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "Messaggi chiave della campagna",
+                "description": "Key campaign messages",
             },
         },
         "required": ["product", "season", "audience", "goal", "tone_of_voice"],
@@ -62,23 +62,23 @@ GENERATE_CAMPAIGN_TOOL = MCPTool(
 
 GENERATE_COPY_TOOL = MCPTool(
     name="generate_copy",
-    description="Genera solo la parte testuale della campagna (headline, tagline e copy).",
+    description="Generates only the text part of the campaign (headline, tagline and copy).",
     input_schema=GENERATE_CAMPAIGN_TOOL.input_schema,
 )
 
 GENERATE_BACKGROUND_TOOL = MCPTool(
     name="generate_background",
-    description="Genera solo l'immagine di background a partire da un briefing strutturato.",
+    description="Generates only the background image starting from a structured briefing.",
     input_schema=GENERATE_CAMPAIGN_TOOL.input_schema,
 )
 
 GET_IMAGE_TOOL = MCPTool(
     name="get_campaign_image",
-    description="Recupera l'immagine background generata in formato base64 dato il path del file.",
+    description="Retrieves the generated background image in base64 format given the file path.",
     input_schema={
         "type": "object",
         "properties": {
-            "image_path": {"type": "string", "description": "Path del file immagine restituito da generate_campaign"},
+            "image_path": {"type": "string", "description": "Path of image file returned by generate_campaign"},
         },
         "required": ["image_path"],
     },
@@ -86,7 +86,7 @@ GET_IMAGE_TOOL = MCPTool(
 
 HEALTH_TOOL = MCPTool(
     name="health_check",
-    description="Restituisce lo stato di salute del servizio backend.",
+    description="Returns the health status of the backend service.",
     input_schema={"type": "object", "properties": {}},
 )
 

@@ -3,7 +3,7 @@ from typing import Optional
 
 
 class BriefingInput(BaseModel):
-    """Input JSON estratto dal briefing campagna."""
+    """Input JSON extracted from campaign briefing."""
     product: Optional[str] = Field(..., description="Name/description of the product")
     season: Optional[str] = Field(..., description="Season/period of the campaign")
     audience: Optional[str] = Field(..., description="Target audience")
@@ -51,9 +51,9 @@ class VisualOnlyOutput(BaseModel):
 
 
 class BriefingOriginalDocInput(BaseModel):
-    """Input: documento originale del briefing (PDF upload).
-    Nota: il file viene ricevuto come UploadFile FastAPI, non via Pydantic.
-    Questo schema è usato solo per documentazione OpenAPI.
+    """Input: original briefing document (PDF upload).
+    Note: the file is received as FastAPI UploadFile, not via Pydantic.
+    This schema is used only for OpenAPI documentation.
     """
     model_config = {"populate_by_name": True}
 

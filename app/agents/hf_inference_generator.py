@@ -1,25 +1,25 @@
 """
-HuggingFace Inference API Generator
-Genera immagini tramite HuggingFace Inference API (free tier).
-Nessun download locale, nessun problema di RAM — tutto gira su HF cloud.
+HuggingFace Inference API Generator.
+Generates images via HuggingFace Inference API (free tier).
+No local download, no RAM issues — everything runs on HF cloud.
 
-Modello raccomandato: black-forest-labs/FLUX.1-dev
-→ Supporta negative_prompt nativo — ideale per scene vuote senza oggetti
-→ Gratuito su HF Inference API (con HF_TOKEN)
-→ Rate limit: ~10-20 req/giorno sul free tier
-→ Accettare i termini su: https://huggingface.co/black-forest-labs/FLUX.1-dev
+Recommended model: black-forest-labs/FLUX.1-dev
+→ Supports native negative_prompt — ideal for empty scenes without objects
+→ Free on HF Inference API (with HF_TOKEN)
+→ Rate limit: ~10-20 req/day on free tier
+→ Accept terms at: https://huggingface.co/black-forest-labs/FLUX.1-dev
 
-Modello alternativo: black-forest-labs/FLUX.1-schnell
-→ Più veloce, meno prompt-following, NO negative_prompt nativo
+Alternative model: black-forest-labs/FLUX.1-schnell
+→ Faster, less prompt-following, NO native negative_prompt
 
-PREREQUISITI:
-1. Account HuggingFace su https://huggingface.co
-2. Token READ su https://huggingface.co/settings/tokens
-3. HF_TOKEN=hf_xxx nel file .env
-4. IMAGE_BACKEND=hf_inference nel file .env
-5. HF_INFERENCE_MODEL=black-forest-labs/FLUX.1-dev nel file .env
+PREREQUISITES:
+1. HuggingFace account at https://huggingface.co
+2. READ token at https://huggingface.co/settings/tokens
+3. HF_TOKEN=hf_xxx in .env file
+4. IMAGE_BACKEND=hf_inference in .env file
+5. HF_INFERENCE_MODEL=black-forest-labs/FLUX.1-dev in .env file
 
-Dipendenze: solo httpx (già in requirements.txt) — nessuna dipendenza aggiuntiva.
+Dependencies: only httpx (already in requirements.txt) — no additional dependencies.
 """
 import logging
 import base64
@@ -95,9 +95,9 @@ def _build_payload(prompt: str, model: str) -> dict:
 
 async def generate_image_hf_inference(prompt: str) -> dict:
     """
-    Chiama HuggingFace Inference API per generare un'immagine.
-    Restituisce image_base64, image_path, generation_status, generation_model.
-    Gestisce cold start con retry automatico (max 2 tentativi).
+    Calls HuggingFace Inference API to generate an image.
+    Returns image_base64, image_path, generation_status, generation_model.
+    Handles cold start with automatic retry (max 2 attempts).
     """
     if not settings.hf_token:
         logger.error(

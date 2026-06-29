@@ -1,7 +1,7 @@
 """
-Copywriter Agent
-Genera headline, tagline e copy pubblicitario dal briefing JSON.
-Usa ainvoke (async) per permettere vera parallelizzazione con visual_expert.
+Copywriter Agent.
+Generates headline, tagline and advertising copy from JSON briefing.
+Uses ainvoke (async) to enable true parallelization with visual_expert.
 """
 import logging
 import json
