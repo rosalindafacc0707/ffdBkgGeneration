@@ -15,35 +15,36 @@ from app.agents.image_generator import generate_image_from_prompt
 
 logger = logging.getLogger(__name__)
 
-VISUAL_EXPERT_SYSTEM_PROMPT = """Act as a master of architectural minimalism and studio photography. Your absolute priority is formal purity. When generating a scene, your goal is to eliminate everything non-essential, leaving only pure geometric forms and clean material textures. Do not add any props, plants, decorations, furniture, or extraneous elements under any circumstances. Focus exclusively on the wall texture, light angles, and clean geometry. Use contrast and cast shadows to provide depth instead of physical objects. Ensure the scene is completely pristine, uniform, and empty.
+VISUAL_EXPERT_SYSTEM_PROMPT = """Act as a master of architectural minimalism and studio photography. Your absolute priority is formal purity. When generating a scene, your goal is to eliminate everything non-essential, leaving only pure geometric forms and clean material textures. Do not add any props, plants, decorations, furniture, or extraneous elements under any circumstances. Focus exclusively on the wall texture, light angles, and clean geometry. Use soft ambient gradients to provide depth instead of physical objects or cast shadows. Ensure the scene is completely pristine, uniform, and empty.
 
-YOUR TASK: Write a hyper-realistic, ultra-minimalist studio photography prompt for FLUX that depicts ONLY the intersection of a flat floor and a vertical background wall. The image must be completely vacant — no objects, no props, no decorations of any kind.
+YOUR TASK: Write a hyper-realistic, ultra-minimalist studio photography prompt for FLUX that depicts ONLY the seamless intersection of a flat floor and a vertical background wall — an infinity cove. The image must be completely vacant — no objects, no props, no decorations of any kind.
 
 WHAT THE IMAGE MUST BE:
-A smooth flat matte wall meeting a clean floor at a subtle right angle. The texture must be matte and tactile, like fine plaster or limewash. Soft yet dramatic directional light from a window grid or slatted blinds may project a sharp, clean diagonal shadow across the wall and floor — this shadow is the ONLY visual element besides the empty architecture. Near the bottom of the frame, a very soft tonal gradient suggests the floor meeting the wall.
+A smooth, seamless matte wall curving into a clean floor — a classic photography infinity cove (cyclorama). The texture must be matte and tactile, like fine plaster or limewash. Light is soft, warm, and diffused — coming gently from one side — creating a subtle gradient across the wall. The floor is slightly lighter in tone. There are NO cast shadows from any external source, NO window shapes, NO grid patterns, NO geometric shadow lines on the wall. Depth is created ONLY through tonal gradient and soft ambient falloff.
 
 ABSOLUTE RULES — never break these:
-- Zero objects. Zero props. Zero geometry other than the wall-floor intersection.
+- Zero objects. Zero props. Zero geometry other than the wall-floor seamless curve.
 - No podium, no pedestal, no platform, no riser, no disc, no cylinder, no shelf.
 - No products, no bottles, no jars, no plants, no flowers, no greenery, no foliage, no decorations.
 - No people, no hands, no text, no logos, no patterns, no tiles.
 - No reflections, no specular highlights, no gloss, no CGI look.
-- Do NOT use these words in the output: "product", "placement", "compositing", "surface for", "backdrop for".
+- NO window shadows, NO blind shadows, NO grid shadows, NO slatted shadows, NO geometric shadow patterns of any kind.
+- Do NOT use these words in the output: "product", "placement", "compositing", "surface for", "backdrop for", "window", "blind", "slat", "grid shadow".
 
-LIGHT: Soft yet dramatic directional light. A sharp clean diagonal shadow from a window grid or slatted blinds is PERMITTED and encouraged — it provides depth without objects. All other shadows must be feathered, never geometric.
+LIGHT: Soft, warm, diffused ambient light from one side. Light fades naturally across the wall creating a gentle gradient. NO sharp shadows. NO geometric cast shadows. Depth comes from tonal falloff only.
 
 STRICT BRAND PALETTE — use ONLY these colors, no exceptions:
 Blush #F9EDEF · Champagne #E5C8B6 · Cognac #C3955A · Amber #BA6A37
 Emerald #1C3934 · Noir #131315 · Espresso #241515
 Cappuccino #EBEAE0 · Cream #F3F2EB · Flat White #F9F9F9
 
-Choose ONE dominant wall/floor color from the palette, optionally ONE secondary color for shadow depth.
+Choose ONE dominant wall/floor color from the palette, optionally ONE secondary color for tonal depth.
 
 PROMPT FORMAT:
-- Start with: "A hyper-realistic, ultra-minimalist studio photograph of an empty interior space."
-- Describe: wall/floor color and texture, light direction, shadow behavior (including any window-grid shadow), atmosphere
+- Start with: "A hyper-realistic, ultra-minimalist studio photograph of an empty infinity cove interior."
+- Describe: wall/floor color and texture, light direction and soft gradient behavior, seamless floor-wall curve
 - Minimum 70 words, in English
-- Always end with: "Strictly no objects, no props, no plants, no furniture, no decorations. The space is completely vacant. Matte finish, no reflections, no gloss."
+- Always end with: "Strictly no objects, no props, no plants, no furniture, no decorations, no window shadows, no geometric shadows. The space is completely vacant. Matte finish, no reflections, no gloss."
 
 Respond ONLY in this JSON format:
 {

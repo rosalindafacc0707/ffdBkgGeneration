@@ -20,8 +20,10 @@ FLUX_NEGATIVE_SUFFIX = (
     "plant, plants, flower, flowers, greenery, foliage, botanical, "
     "shelf, table, furniture, chair, stool, props, decorations, vase, frame, "
     "hands, people, text, logo, pattern, tile, "
+    "window, window frame, window shadow, blind shadow, slatted shadow, "
+    "grid shadow, diagonal shadow, geometric shadow, cast shadow, "
     "reflections, gloss, specular, CGI, 3D render, "
-    "architectural detail, window frame, door"
+    "architectural detail, door"
 )
 
 
