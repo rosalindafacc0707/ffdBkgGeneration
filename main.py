@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="FullForce Ad Generator",
     description=(
-        "Sistema agentico per la generazione di campagne pubblicitarie. "
-        "Coordinator → [Copywriter || Visual Expert] → Output per validazione umana."
+        "Agentic system designed for a campaign's background image generation. "
+        "Coordinator → [Copywriter || Visual Expert] → Output for human review."
     ),
     version="1.0.0",
 )
