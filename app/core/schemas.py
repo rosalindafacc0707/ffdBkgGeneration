@@ -2,6 +2,11 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 
+class ColorPaletteEntry(BaseModel):
+    name: Optional[str] = Field(None, description="Display name of the color")
+    hex: Optional[str] = Field(None, description="Hex value of the color")
+
+
 class BriefingInput(BaseModel):
     """Input JSON extracted from campaign briefing."""
     product: Optional[str] = Field(..., description="Name/description of the product")
@@ -13,6 +18,10 @@ class BriefingInput(BaseModel):
     brand: Optional[str] = Field(None, description="Brand or company")
     campaign_name: Optional[str] = Field(None, description="Name of the campaign")
     key_messages: Optional[list[str]] = Field(None, description="Key messages from the brief")
+    color_palette: Optional[list[ColorPaletteEntry]] = Field(
+        default_factory=list,
+        description="User-selected palette colors sent from the frontend",
+    )
     raw_extraction: Optional[str] = Field(None, description="raw text extracted from the PDF")
 
     model_config = {"populate_by_name": True}
@@ -68,6 +77,10 @@ class BriefingJson(BaseModel):
     brand: Optional[str] = Field(None, description="Brand or company")
     campaign_name: Optional[str] = Field(None, description="Name of the campaign")
     key_messages: Optional[list[str]] = Field(None, description="Key messages from the brief")
+    color_palette: Optional[list[ColorPaletteEntry]] = Field(
+        default_factory=list,
+        description="User-selected palette colors sent from the frontend",
+    )
     raw_extraction: Optional[str] = Field(None, description="raw text extracted from the PDF")
 
     model_config = {"populate_by_name": True}

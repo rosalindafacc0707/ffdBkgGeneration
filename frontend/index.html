@@ -697,6 +697,14 @@
       line-height: 1.7;
       color: var(--text-dim);
       font-family: var(--mono);
+      word-break: break-word;
+    }
+    .prompt-text {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+      margin: 0;
+      width: 100%;
     }
 
     /* ── Import from Workfront — primary action ───────────────────── */
@@ -1758,6 +1766,7 @@ function collectBriefing() {
     brand: get('f-brand').trim() || null,
     campaign_name: get('f-campaign').trim() || null,
     key_messages: messages ? messages.split('\n').map(s => s.trim()).filter(Boolean) : null,
+    color_palette: palette.map(c => ({ name: c.name, hex: c.hex })),
   };
 }
 
@@ -1771,6 +1780,7 @@ function clearForm() {
   document.getElementById('pdf-filename').textContent = '';
   document.getElementById('btn-extract').disabled = true;
   document.getElementById('pdf-input').value = '';
+  resetPalette();
 }
 
 /* ── Render results ───────────────────────────────────────────────── */
