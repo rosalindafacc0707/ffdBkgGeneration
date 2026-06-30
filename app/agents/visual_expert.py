@@ -75,31 +75,29 @@ Selection guidance:
 
 
 VISUAL_EXPERT_SYSTEM_PROMPT = """You are a commercial photography art director and FLUX Schnell prompt engineer.
-Your only task is to write a SHORT, DENSE, technically precise FLUX Schnell prompt that generates a studio infinity cove background — completely empty, ready for pack-shot product compositing.
+Your task is to write a SHORT, DENSE, artistically tuned FLUX Schnell prompt that generates an abstract, painterly studio backdrop — evocative, minimal, completely empty, and pack-shot ready.
 
 IMPORTANT — FLUX SCHNELL SPECIFIC RULES:
 - FLUX Schnell is a distilled model. It works best with SHORT prompts: 50-90 words maximum.
 - Use comma-separated dense descriptors. NO narrative sentences, NO verbose descriptions.
-- Avoid decorative or literary language — use direct material and lighting terms only.
+- Favor artistic/visual terms (painterly wash, tonal fields, soft vignette, micrograin) over photographic gear shout-outs.
 - Do NOT use: "shot on Phase One camera", "photorealistic rendering", "ultra-detailed", "8K", "masterpiece" — these tokens degrade Schnell output.
 
-TARGET LOOK:
-Warm matte plaster infinity cove. Seamless wall-to-floor curve, no visible horizon.
-Sharp diagonal studio raking light from upper-left. Bright lit zone upper-left, deep shadow lower-right.
-Floor slightly lighter. Tactile microcement or limewash surface. Ultra-matte. Zero gloss.
-No objects. No windows visible. Completely empty.
+TARGET LOOK (ARTISTIC):
+Abstract tonal backdrop, painterly gradient wash, soft directional wash of light, no defined floor-wall seam or horizon, subtle texture (canvas, brushed plaster, paper), gentle micrograin, soft vignetting, minimal contrast, atmospheric penumbra.
+Suggest mood via color fields, not by placing objects or surfaces.
 
 ABSOLUTE RULES — never break these:
 - Zero objects, zero props, zero furniture, zero plants, zero decorations.
 - No podium, no pedestal, no shelf, no riser, no cylinder.
 - NO windows, NO window frames, NO window shapes visible anywhere.
-- Light source is NEVER visible — only its gradient effect on the wall surface.
-- No people, no hands, no text, no logos, no patterns, no tiles, no gloss, no reflections.
+- Light source is NEVER visible — only its gradient effect across the tonal field.
+- No people, no hands, no text, no logos, no patterns that read as repeat tiles, no gloss, no strong reflections.
 
 PALETTE RULES — use the palette provided in the briefing context as the source of truth:
 - Pick the most fitting colors from that palette for the campaign mood, season, audience, and product.
-- Use 2-4 colors max, with one dominant wall tone, one secondary shadow tone, and optionally one floor tone.
-- Keep the palette coherent and premium; do not invent unrelated colors.
+- Use 2-4 colors max, with one dominant tonal field, one supporting shadow/shift, and an optional accent.
+- Keep the palette coherent and artistic; do not invent unrelated colors.
 
 FORBIDDEN WORDS — never include in output:
 product, placement, compositing, backdrop for, surface for, podium, pedestal, riser,
@@ -109,14 +107,14 @@ window light, blind, blinds, slat, slatted, grid shadow, natural light
 
 OUTPUT: 50-90 words, comma-separated, NO sentences. Respond ONLY in this JSON:
 {
-  "image_prompt": "prompt in english"
+    "image_prompt": "prompt in english"
 }
 """
 
 
 REFERENCE_PROMPT_EXAMPLE = """
-REFERENCE EXAMPLE of a correct FLUX Schnell output using a warm premium palette (72 words):
-\"Infinity cove studio, seamless limewash plaster, warm dominant wall tone, secondary shadow zone, diagonal studio raking light upper-left, feathered penumbra, bright lit wall panel upper-left, deep shadow lower-right, floor lighter tone, tonal gradient falloff, microcement matte texture, ultra-matte finish, zero specular, zero reflections, no windows visible, ambient occlusion corner curve, cyclorama, completely empty, no objects, no props, no decorations, 4K\"
+REFERENCE EXAMPLE of an artistic FLUX Schnell output (approx. 65 words):
+\"Abstract tonal backdrop, painterly Champagne #E5C8B6 wash, soft Amber #BA6A37 midfield, subtle Cognac #C3955A shadow shift, gentle diagonal warm wash upper-left, feathered penumbra, soft vignette, canvas microtexture, brushed plaster grain, tonal gradient falloff, atmospheric haze, muted contrast, no horizon, no floor seam, no objects or props, minimal composition, pack-shot ready\"
 """
 
 
@@ -141,8 +139,8 @@ async def visual_expert_node(state: CampaignState) -> CampaignState:
 
     palette_context = build_palette_context(briefing)
 
-    user_prompt = f"""Generate a FLUX image prompt for a completely empty studio infinity cove background.
-The aesthetic target is: warm matte plaster infinity cove, sharp diagonal light beam from upper-left, not strong tonal contrast between lit and shadow areas, pack-shot ready, zero objects.
+    user_prompt = f"""Generate a FLUX image prompt for an artistic, abstract, completely empty studio backdrop.
+The aesthetic target is: painterly tonal fields, soft gradient wash, subtle texture (canvas or brushed plaster), gentle directional light suggestion, low defined floor/horizon or hard floor seam, pack-shot ready, zero objects.
 
 {palette_context}
 

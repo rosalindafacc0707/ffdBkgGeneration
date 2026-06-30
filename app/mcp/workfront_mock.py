@@ -1,19 +1,19 @@
 """
 Workfront Mock Integration.
 
-Simula il comportamento di un MCP server Workfront (non disponibile in questo
-ambiente) per il recupero di briefing in stato "Ready". Restituisce un payload
-JSON compatibile 1:1 con `BriefingJson` / `BriefingInput`, così può essere
-passato direttamente come input a `/campaign/brief_insights_extraction`
-oppure a `/campaign/generate_copy_and_background`.
+Simulates the behavior of a Workfront MCP server (unavailable in this
+environment) for retrieving briefings with a "Ready" status. It returns a
+JSON payload that is 1:1 compatible with `BriefingJson` / `BriefingInput`,
+allowing it to be passed directly as input to `/campaign/brief_insights_extraction`
+or `/campaign/generate_copy_and_background`.
 
-Quando in futuro sarà disponibile il vero MCP server Workfront, basterà
-sostituire `_fetch_ready_briefings_mock()` con la chiamata reale (es. via
-httpx verso l'endpoint MCP di Workfront) mantenendo invariata la firma
-pubblica `get_ready_briefings(...)`.
+When the actual Workfront MCP server becomes available in the future,
+`_fetch_ready_briefings_mock()` can simply be replaced with the real call
+(e.g., via `httpx` to the Workfront MCP endpoint) while keeping the public
+signature `get_ready_briefings(...)` unchanged.
 
-NOTE: questo modulo è puramente un mock a scopo di sviluppo/demo. Non
-effettua alcuna chiamata di rete reale verso Workfront.
+NOTE: This module is purely a mock for development/demo purposes. It
+does not make any actual network calls to Workfront.
 """
 import logging
 import random
@@ -44,8 +44,8 @@ _MOCK_BRIEFINGS_POOL = [
             "Clinically tested formula",
             "Luxury skincare ritual",
         ],
-        "raw_extraction": "[mock] Estratto da Workfront — Briefing 'Winter Ritual' per FullCosmetics — The Force of Beauty. "
-                          "Obiettivo: lancio crema rigenerante notte 50ml per la stagione invernale...",
+        "raw_extraction": "[mock] Excerpt from Workfront — 'Winter Ritual' briefing for FullCosmetics — The Force of Beauty. "
+                          "Objective: launch of a 50ml regenerating night cream for the winter season...",
     },
     {
         "product": "Vitamin C Brightening Serum 30ml",
@@ -60,8 +60,8 @@ _MOCK_BRIEFINGS_POOL = [
             "Visible radiance in 7 days",
             "Dermatologist approved",
         ],
-        "raw_extraction": "[mock] Estratto da Workfront — Briefing 'Bright Start' per FullCosmetics — The Force of Beauty. "
-                          "Lancio siero vitamina C per primavera, focus su luminosità e freschezza...",
+        "raw_extraction": "[mock] Excerpt from Workfront — 'Bright Start' briefing for FullCosmetics — The Force of Beauty. "
+                          "Spring launch of Vitamin C serum, focusing on radiance and freshness...",
     },
     {
         "product": "Hydrating Hand Cream 75ml",
@@ -76,8 +76,8 @@ _MOCK_BRIEFINGS_POOL = [
             "Non-greasy fast absorption",
             "Suitable for sensitive skin",
         ],
-        "raw_extraction": "[mock] Estratto da Workfront — Briefing 'Daily Comfort' per FullCosmetics — The Force of Beauty. "
-                          "Campagna di riposizionamento per crema mani idratante uso quotidiano...",
+        "raw_extraction": "[mock] Excerpt from Workfront — 'Daily Comfort' briefing for FullCosmetics — The Force of Beauty. "
+                          "Repositioning campaign for a daily-use moisturizing hand cream...",
     },
     {
         "product": "SPF50 Daily Defense Fluid 40ml",
@@ -92,16 +92,16 @@ _MOCK_BRIEFINGS_POOL = [
             "Weightless invisible finish",
             "Reef-safe formula",
         ],
-        "raw_extraction": "[mock] Estratto da Workfront — Briefing 'Shield Up' per FullCosmetics — The Force of Beauty. "
-                          "Lancio fluido solare quotidiano per la stagione estiva, target attivo outdoor...",
+        "raw_extraction": "[mock] Excerpt from Workfront — 'Shield Up' briefing for FullCosmetics — The Force of Beauty. "
+                          "Launch of a daily sun fluid for the summer season, targeting active outdoor enthusiasts...",
     },
 ]
 
 
 def _make_workfront_envelope(briefing: dict, index: int) -> dict:
     """
-    Avvolge il payload BriefingJson con metadati tipici di un task Workfront,
-    cosi' il mock e' indistinguibile da una vera risposta MCP Workfront.
+    It wraps the BriefingJson payload with metadata typical of a Workfront task,
+    making the mock indistinguishable from a real Workfront MCP response.
     """
     now = datetime.now(timezone.utc)
     task_id = f"WF-{uuid.uuid4().hex[:8].upper()}"
@@ -126,10 +126,10 @@ async def _fetch_ready_briefings_mock(
     project_id: Optional[str] = None,
 ) -> list[dict]:
     """
-    Simula la latenza e il comportamento di una vera chiamata MCP a Workfront.
-    In futuro questa funzione va sostituita con la chiamata reale al
-    Workfront MCP server (es. tramite httpx.AsyncClient verso l'endpoint
-    MCP esposto da Workfront, con autenticazione OAuth/API key).
+    Simulates the latency and behavior of a real MCP call to Workfront.
+    In the future, this function should be replaced with the actual call to the
+    Workfront MCP server (e.g., using httpx.AsyncClient to the MCP endpoint
+    exposed by Workfront, with OAuth/API key authentication).
     """
     logger.info("   [WORKFRONT MOCK] Simulating network round-trip…")
     import asyncio
@@ -151,18 +151,18 @@ async def get_ready_briefings(
     project_id: Optional[str] = None,
 ) -> dict:
     """
-    Entry point pubblico — equivalente del tool MCP `get_ready_briefings`
-    che ci si aspetta da un vero Workfront MCP server.
+    Public entry point — equivalent to the `get_ready_briefings` MCP tool
+    expected from a real Workfront MCP server.
 
     Args:
-        limit: numero massimo di briefing da restituire (default 5).
-        project_id: opzionale, filtro per progetto Workfront (ignorato nel mock).
+        limit: maximum number of briefings to return (default 5).
+        project_id: optional, filter by Workfront project (ignored in the mock).
 
     Returns:
-        dict con la lista di briefing "Ready" e i relativi metadati Workfront.
-        Ogni elemento contiene `briefing_payload`, utilizzabile direttamente
-        come body per /api/v1/campaign/generate_copy_and_background oppure
-        come riferimento di confronto per /api/v1/campaign/brief_insights_extraction.
+        A dict containing the list of "Ready" briefings and their associated Workfront metadata.
+        Each item contains a `briefing_payload` that can be used directly
+        as the body for /api/v1/campaign/generate_copy_and_background or
+        as a reference for comparison with /api/v1/campaign/brief_insights_extraction.
     """
     t0 = time.perf_counter()
     logger.info(SEPARATOR)

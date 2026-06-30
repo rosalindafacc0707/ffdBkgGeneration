@@ -1,263 +1,161 @@
-# FullForce Ad Generator 🎯
+# FullForce Assets Generator 4 Campaigns
 
-Agentic system for automatic generation of advertising backgrounds for dermatological and cosmetic product campaigns.
-Built on **FastAPI** + **LangGraph** + **Ollama** (100% local LLM) + **Pollinations.ai** (image generation, free, no subscription).
+FullForce Assets Generator 4 Campaigns is a FastAPI + LangGraph workflow for creating advertising background images from campaign briefs. It combines PDF brief extraction, copy generation, prompt generation for visual models, and image generation through multiple backends.
 
----
+## What the repository does today
+
+The app accepts a campaign brief, extracts structured data from a PDF, generates copy, and builds an image prompt for the Visual Expert agent. That prompt is then sent to the configured image backend.
+
+### Main capabilities
+
+- Extract structured briefing JSON from a PDF
+- Generate headline, tagline, and copy text
+- Generate an image prompt tailored to the briefing and custom palette
+- Generate background images via Pollinations, Hugging Face Inference, Ollama, or OneDrive-based selection
+- Serve a browser UI from the frontend folder
+- Expose REST and MCP-style routes for integration
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        INPUT                                        │
-│  POST /campaign/brief_insights_extraction  →  PDF Upload            │
-│  POST /campaign/generate                   →  JSON Briefing         │
-└───────────────────────────┬─────────────────────────────────────────┘
-                            │
-                            ▼
-                  ┌─────────────────┐
-                  │  COORDINATOR    │  (LangGraph — parallel fan-out)
-                  └────────┬────────┘
-                           │
-               ┌───────────┴───────────┐
-               │                       │
-               ▼                       ▼
-   ┌─────────────────┐     ┌───────────────────────────────────────┐
-   │   COPYWRITER    │     │            VISUAL EXPERT              │
-   │  (llama3.2)     │     │  1. gemma4:e4b → FLUX prompt          │
-   │                 │     │  2. image_generator                   │
-   │  → headline     │     │     → FLUX_NEGATIVE_PREFIX applied    │
-   │  → tagline      │     │     → pollinations_generator          │
-   │  → copy_text    │     │  → image_path + base64                │
-   └────────┬────────┘     └──────────────────┬────────────────────┘
-            │                                 │
-            └─────────────┬───────────────────┘
-                          │ fan-in
-                          ▼
-           Output for Human Review
-           • copy:   headline + tagline + copy_text
-           • visual: image_prompt + image_path + base64
-```
+- API layer: [app/api/routes.py](app/api/routes.py)
+- Agent orchestration: [app/agents/coordinator.py](app/agents/coordinator.py)
+- Brief extraction: [app/agents/brief_extractor.py](app/agents/brief_extractor.py)
+- Copy generation: [app/agents/copywriter.py](app/agents/copywriter.py)
+- Visual prompt generation: [app/agents/visual_expert.py](app/agents/visual_expert.py)
+- Image backend router: [app/agents/image_generator.py](app/agents/image_generator.py)
+- Frontend UI: [frontend/index.html](frontend/index.html)
 
----
+## Project structure
 
-## Complete workflow with brief extraction
-
-```
-PDF Briefing
-    │
-    ▼
-POST /campaign/brief_insights_extraction
-    │  brief_extractor.py
-    │  • pymupdf → extracts PDF text
-    │  • llama3.2 → extracts structured JSON
-    │
-    ▼
-BriefingJson
-{
-  "product", "season", "audience", "goal",
-  "tone_of_voice", "brand", "campaign_name",
-  "key_messages", "raw_extraction"
-}
-    │
-    ▼  (uses required fields as input to /campaign/generate)
-POST /campaign/generate
-    │
-    ▼
-CampaignOutput
-{
-  "copy":   { headline, tagline, copy_text },
-  "visual": { image_prompt, image_path, image_base64, ... }
-}
+```text
+app/
+  agents/
+    brief_extractor.py
+    coordinator.py
+    copywriter.py
+    hf_inference_generator.py
+    image_generator.py
+    onedrive_selector.py
+    pollinations_generator.py
+    state.py
+    visual_expert.py
+  api/
+    routes.py
+  core/
+    config.py
+    schemas.py
+  mcp/
+    server.py
+    tools.py
+    workfront_mock.py
+frontend/
+  index.html
+main.py
+requirements.txt
+tests/
 ```
 
----
+## Requirements
 
-## Prerequisites
+Python 3.11+ is recommended.
 
-- Python 3.11+
-- [Ollama](https://ollama.ai) installed and running
-- Ollama models to download:
+Install dependencies:
 
 ```bash
-ollama pull llama3.2       # LLM copywriter + brief extractor
-ollama pull gemma4:e4b     # LLM visual expert (FLUX prompt generation)
-```
-
-> For image generation the default backend is **Pollinations.ai** — cloud, free, no download required.
-
----
-
-## Setup
-
-```bash
-# 1. Virtual environment
 python -m venv .venv
-source .venv/bin/activate      # Windows: .venv\Scripts\activate
-
-# 2. Base dependencies (includes pymupdf for PDF reading)
+source .venv/bin/activate
 pip install -r requirements.txt
+```
 
-# 3. Configuration
+## Configuration
+
+The app reads environment variables from a local `.env` file via [app/core/config.py](app/core/config.py).
+
+Common settings include:
+
+- `OLLAMA_BASE_URL`
+- `OLLAMA_LLM_MODEL`
+- `OLLAMA_VISION_MODEL`
+- `IMAGE_BACKEND` (`pollinations`, `ollama`, `hf_inference`, `onedrive`)
+- `POLLINATIONS_MODEL`
+- `HF_TOKEN`
+- `HF_INFERENCE_MODEL`
+- `IMAGE_OUTPUT_DIR`
+
+Example:
+
+```bash
 cp .env.example .env
-# Verify IMAGE_BACKEND=pollinations in .env
+```
 
-# 4. Start
+## Run locally
+
+```bash
 python main.py
 ```
 
-App: **http://localhost:8000** — Swagger UI: **http://localhost:8000/docs**
+Then open:
 
----
+- http://localhost:8000/
+- http://localhost:8000/docs
 
-## Backend Image Generation
+## API endpoints
 
-Selectable via `IMAGE_BACKEND` in `.env`. Default: `pollinations`.
+### Brief extraction
 
-### `pollinations` — default ✅
+`POST /api/v1/campaign/brief_insights_extraction`
 
-Calls [Pollinations.ai](https://pollinations.ai) via HTTP GET. Free, no API key, no download, no monthly rate limit.
+Uploads a PDF and returns a structured briefing JSON.
 
-```env
-IMAGE_BACKEND=pollinations
-POLLINATIONS_MODEL=flux        # flux | flux-realism | flux-anime | turbo
-```
+### Generate full campaign
 
-| Model | Style | Speed |
-|---|---|---|
-| `flux` | High quality | ~15-25 sec |
-| `flux-realism` | Photorealistic | ~15-25 sec |
-| `flux-anime` | Illustrative style | ~15-25 sec |
-| `turbo` | Fast, lower quality | ~5-10 sec |
+`POST /api/v1/campaign/generate_copy_and_background`
 
-### Other backends
+Receives a structured briefing and returns both copy and visual output.
 
-| Backend | Requirements | Notes |
-|---|---|---|
-| `ollama` | Image model installed locally | `OLLAMA_IMAGE_MODEL=x/z-image-turbo` |
-| `hf_inference` | HF_TOKEN + HF credits | Free plan exhaustible |
+### Generate copy only
 
----
+`POST /api/v1/campaign/generate_copy`
 
-## FLUX Negative Prefix — anti-hallucination for objects
+### Generate background only
 
-FLUX tends to generate podiums and products in skincare scenes due to training data.
-`image_generator.py` automatically prepends a negative prefix to all FLUX prompts:
+`POST /api/v1/campaign/generate_background`
 
-```python
-FLUX_NEGATIVE_PREFIX = (
-    "EMPTY WALL ONLY. "
-    "Absolutely no podium, no pedestal, no platform, no riser, no cylinder, no disc, "
-    "no circular base, no geometric shape, no 3D object, no product, no cosmetic jar, "
-    "no bottle, no tube, no container, no prop, no plant, no flower, no leaf, "
-    "no shelf, no table, no furniture, no floor object, no shadow of any object, "
-    "no hands, no people, no text, no logo, no pattern, no tile, no architectural detail. "
-    "The frame contains ONLY a flat matte wall with light and shadow gradients. "
-    "Zero objects. Zero props. Zero geometry. Pure empty background. "
-)
-```
+### Health check
 
-Automatically applied to `pollinations` and `hf_inference`. Should not be included in Gemma prompt.
+`GET /api/v1/health`
 
----
+## Frontend
 
-## Mandatory Brand Palette
+The frontend is a single-page UI in [frontend/index.html](frontend/index.html). It lets users:
 
-The `visual_expert.py` uses exclusively these colors:
+- upload a PDF briefing
+- edit the generated briefing fields
+- choose and edit a brand palette
+- generate copy and background
+- view the resulting FLUX prompt
 
-| Name | Hex | RGB |
-|---|---|---|
-| Blush | `#F9EDEF` | 249, 237, 239 |
-| Champagne | `#E5C8B6` | 229, 200, 182 |
-| Cognac | `#C3955A` | 195, 149, 90 |
-| Amber | `#BA6A37` | 186, 106, 55 |
-| Emerald | `#1C3934` | 28, 57, 52 |
-| Noir | `#131315` | 19, 19, 21 |
-| Espresso | `#241515` | 36, 21, 21 |
-| Cappuccino | `#EBEAE0` | 235, 234, 224 |
-| Cream | `#F3F2EB` | 243, 242, 235 |
-| Flat White | `#F9F9F9` | 249, 249, 249 |
+## Image generation backends
 
----
+The image generation flow is routed by [app/agents/image_generator.py](app/agents/image_generator.py).
 
-## Repository Structure
+Supported backends:
 
-```
-ffdBkgGeneration/
-├── .env.example
-├── .gitignore
-├── requirements.txt                    ← base dependencies (includes pymupdf)
-├── requirements-flux.txt               ← optional FLUX dependencies
-├── main.py                             ← FastAPI application entry point
-├── README.md
-├── Dockerfile                          ← container image configuration
-├── app/
-│   ├── core/
-│   │   ├── config.py                   ← Pydantic settings (reads .env)
-│   │   └── schemas.py                  ← BriefingInput, BriefingJson,
-│   │                                      CampaignOutput, VisualResult, CopyResult
-│   ├── agents/
-│   │   ├── state.py                    ← CampaignState TypedDict for LangGraph
-│   │   ├── coordinator.py              ← LangGraph graph with parallel fan-out
-│   │   ├── copywriter.py               ← copywriter agent → headline/tagline/copy
-│   │   ├── visual_expert.py            ← visual agent → FLUX prompt via gemma4:e4b
-│   │   ├── brief_extractor.py          ← extracts structured JSON from PDF via llama3.2
-│   │   ├── image_generator.py          ← backend router + FLUX_NEGATIVE_PREFIX
-│   │   ├── pollinations_generator.py   ← Pollinations.ai backend (default)
-│   │   ├── hf_inference_generator.py   ← HuggingFace Inference API backend
-│   │   └── flux_schnell_generator.py   ← deprecated FLUX Schnell backend
-│   ├── api/
-│   │   └── routes.py                   ← all FastAPI HTTP endpoints
-│   └── mcp/
-│       ├── tools.py                    ← MCP tool definitions and dispatch
-│       ├── server.py                   ← MCP HTTP interface (GET /mcp/tools, POST /mcp/call)
-│       └── __init__.py
-├── frontend/
-│   └── index.html                      ← static HTML UI for campaign generation
-├── output/
-│   └── images/                         ← generated images (gitignored)
-└── tests/
-    ├── __init__.py
-    ├── test_campaign.py                ← campaign generation tests
-    ├── test_mcp_server.py              ← MCP integration regression tests
-    └── brief_test_fullcosmetics.pdf         ← example PDF for brief extraction testing
-```
+- `pollinations` — default backend
+- `ollama`
+- `hf_inference`
+- `onedrive`
 
----
+## Testing
 
-## API
-
-### `POST /campaign/brief_insights_extraction`
-
-Estrae JSON strutturato da un file PDF di briefing.
+Run tests with:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/campaign/brief_insights_extraction \
-  -F "file=@brief_campagna.pdf"
+pytest -q
 ```
 
-**Response:**
-```json
-{
-  "product": "Regenerating Night Cream 50ml",
-  "season": "Winter 2025",
-  "audience": "Women 35-55, skin-conscious, premium lifestyle",
-  "goal": "Increase brand awareness in the premium skincare segment",
-  "tone_of_voice": "Sophisticated, reassuring, slightly clinical",
-  "brand": "FullCosmetics — The Force of Beauty",
-  "campaign_name": "Winter Ritual 2025",
-  "key_messages": [
-    "Deep skin regeneration while you sleep",
-    "Clinically tested formula, dermatologist approved",
-    "Science-backed: hyaluronic acid + retinol complex"
-  ],
-  "raw_extraction": "--- Page 1 ---\nCAMPAIGN BRIEF..."
-}
-```
+The repository includes tests for the campaign flow and MCP server integration in [tests](tests).
 
-**Error codes:**
-- `415` — unsupported file format (PDF only)
-- `413` — file too large (max 10 MB)
 - `422` — text not extractable or invalid JSON
 - `500` — Ollama error
 
