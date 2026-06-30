@@ -90,6 +90,41 @@ HEALTH_TOOL = MCPTool(
     input_schema={"type": "object", "properties": {}},
 )
 
+# ─────────────────────────────────────────────────────────────────────────
+# MOCK — Workfront Integration
+# Simula il tool MCP esposto da un vero Workfront MCP server, non disponibile
+# in questo ambiente. Restituisce briefing fittizi in stato "Ready" con il
+# payload gia' compatibile con BriefingJson, cosi' puo' essere collegato a
+# /campaign/brief_insights_extraction o /campaign/generate_copy_and_background
+# senza modificare nulla del flusso AS-IS.
+# Da sostituire con la chiamata reale al Workfront MCP server quando
+# disponibile (stessa firma, stesso tool_name).
+# ─────────────────────────────────────────────────────────────────────────
+GET_READY_BRIEFINGS_TOOL = MCPTool(
+    name="get_ready_briefings",
+    description=(
+        "[MOCK] Simulates Workfront MCP integration. Retrieves campaign briefings "
+        "currently in 'Ready' status from Workfront, returning a payload compatible "
+        "with /campaign/brief_insights_extraction. "
+        "This is a development mock — no real Workfront connection is made."
+    ),
+    input_schema={
+        "type": "object",
+        "properties": {
+            "limit": {
+                "type": "integer",
+                "description": "Maximum number of ready briefings to return (default 5)",
+                "default": 5,
+            },
+            "project_id": {
+                "type": "string",
+                "description": "Optional Workfront project ID to filter by (ignored in mock)",
+            },
+        },
+        "required": [],
+    },
+)
+
 ALL_TOOLS = [
     EXTRACT_BRIEF_TOOL,
     GENERATE_CAMPAIGN_TOOL,
@@ -97,4 +132,5 @@ ALL_TOOLS = [
     GENERATE_BACKGROUND_TOOL,
     GET_IMAGE_TOOL,
     HEALTH_TOOL,
+    GET_READY_BRIEFINGS_TOOL,
 ]

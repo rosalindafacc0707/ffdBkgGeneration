@@ -43,7 +43,7 @@ Example output:
   "audience": "Women 35-55, skin-conscious, premium lifestyle",
   "goal": "Elegant bathroom with warm ambient light",
   "tone_of_voice": "Warm, reassuring, premium, and comforting",
-  "brand": "Dermalab",
+  "brand": "FullCosmetics — The Force of Beauty",
   "campaign_name": "Winter Ritual",
   "key_messages": ["Deep regeneration overnight", "Clinically tested formula", "Luxury skincare ritual"],
   "raw_extraction": "....."

@@ -14,6 +14,7 @@ from app.agents.brief_extractor import run_generate_brief_json
 from app.agents.coordinator import run_campaign, run_copy, run_visual
 from app.core.schemas import BriefingInput
 from app.mcp.tools import ALL_TOOLS
+from app.mcp.workfront_mock import get_ready_briefings
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/mcp", tags=["MCP"])
@@ -67,6 +68,12 @@ async def call_tool(request: MCPCallRequest):
 
         if request.tool_name == "health_check":
             return {"tool_name": request.tool_name, "status": "ok", "service": "FullForce Ad Generator"}
+
+        if request.tool_name == "get_ready_briefings":
+            limit = request.parameters.get("limit", 5)
+            project_id = request.parameters.get("project_id")
+            result = await get_ready_briefings(limit=limit, project_id=project_id)
+            return {"tool_name": request.tool_name, "result": result, "status": "success"}
 
         raise HTTPException(status_code=404, detail=f"Tool '{request.tool_name}' non trovato")
     except HTTPException:

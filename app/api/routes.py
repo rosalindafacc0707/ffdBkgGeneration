@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from app.core.schemas import BriefingInput, BriefingJson, CampaignOutput, CopyOnlyOutput, VisualOnlyOutput
 from app.agents.coordinator import run_campaign, run_copy, run_visual
 from app.agents.brief_extractor import run_generate_brief_json
+from app.mcp.workfront_mock import get_ready_briefings
 
 
 # Utils for the service of brief json extraction ---------
@@ -157,3 +158,33 @@ async def get_image(filename: str):
 @router.get("/health", summary="Health check")
 async def health():
     return {"status": "ok", "service": "FullForce Ad Generator"}
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# MOCK — Workfront Integration
+# Endpoint REST diretto, comodo per test rapidi da Swagger/curl senza
+# passare dal protocollo generico /mcp/call. Internamente richiama lo
+# stesso mock usato dal tool MCP `get_ready_briefings` (vedi app/mcp/server.py).
+# Quando sara' disponibile il vero Workfront MCP server, sostituire
+# l'implementazione in app/mcp/workfront_mock.py mantenendo invariata
+# questa route.
+# ─────────────────────────────────────────────────────────────────────────
+@router.get(
+    "/workfront/ready_briefings",
+    summary="[MOCK] Recupera briefing in stato Ready da Workfront",
+    description=(
+        "Simula la chiamata al Workfront MCP server per recuperare i briefing "
+        "di campagna attualmente in stato 'Ready'. Ogni elemento restituito "
+        "contiene un `briefing_payload` direttamente compatibile con "
+        "/campaign/brief_insights_extraction e /campaign/generate_copy_and_background. "
+        "Nessuna chiamata reale viene effettuata verso Workfront — dati mock per sviluppo/demo."
+    ),
+)
+async def get_ready_briefings_mock(limit: int = 5, project_id: str | None = None):
+    try:
+        logger.info("API: richiesta mock Workfront ready briefings (limit=%d)", limit)
+        result = await get_ready_briefings(limit=limit, project_id=project_id)
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error("API error (workfront mock): %s", e)
+        raise HTTPException(status_code=500, detail=f"Errore mock Workfront: {e}")

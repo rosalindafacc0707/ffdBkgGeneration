@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FullForce — Ad Generator</title>
+  <title>FullForce.digital — Assets' Generator 4 Campaigns</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
@@ -203,6 +203,13 @@
       color: var(--text-muted);
       margin-bottom: 8px;
     }
+    .form-section-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .form-section-label-row .form-section-label { margin-bottom: 0; }
 
     .field {
       margin-bottom: 10px;
@@ -242,54 +249,74 @@
 
     /* PDF upload area */
     .upload-area {
-      border: 1px dashed var(--border-hi);
+      border: 1px dashed var(--border);
       border-radius: var(--radius);
-      padding: 16px 12px;
+      padding: 10px 12px;
       text-align: center;
       cursor: pointer;
       transition: border-color 0.15s, background 0.15s;
       position: relative;
+      opacity: 0.75;
     }
     .upload-area:hover, .upload-area.drag-over {
-      border-color: var(--accent);
-      background: var(--accent-glow);
+      border-color: var(--border-hi);
+      background: rgba(255,255,255,0.015);
+      opacity: 1;
     }
     .upload-area input[type="file"] {
       position: absolute; inset: 0; opacity: 0; cursor: pointer;
     }
     .upload-icon {
-      width: 28px; height: 28px;
-      margin: 0 auto 8px;
+      width: 16px; height: 16px;
+      margin: 0 auto 5px;
       color: var(--text-muted);
     }
-    .upload-label { font-size: 12px; color: var(--text-dim); }
-    .upload-sub { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+    .upload-label { font-size: 10.5px; color: var(--text-muted); }
+    .upload-sub { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
     .upload-filename {
-      font-size: 11px;
-      color: var(--accent);
-      margin-top: 6px;
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-top: 5px;
       font-family: var(--mono);
     }
 
-    /* Extract button */
+    /* Extract button — secondary, low-emphasis (PDF import is a fallback path) */
     .btn-extract {
       width: 100%;
-      padding: 8px;
+      padding: 6px;
       background: transparent;
-      border: 1px solid var(--border-hi);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
-      color: var(--text-dim);
+      color: var(--text-muted);
       font-family: var(--sans);
-      font-size: 12px;
+      font-size: 11px;
       cursor: pointer;
       transition: all 0.15s;
-      margin-top: 8px;
+      margin-top: 6px;
     }
     .btn-extract:hover:not(:disabled) {
-      border-color: var(--accent);
-      color: var(--accent);
+      border-color: var(--border-hi);
+      color: var(--text-dim);
     }
     .btn-extract:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .import-divider {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 14px 0 12px;
+      color: var(--text-muted);
+      font-size: 9px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .import-divider::before,
+    .import-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
 
     /* ── Generate button ─── */
     .panel-footer {
@@ -529,16 +556,17 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      background: var(--panel);
+      background: var(--noir);
     }
 
     .log-header {
-      padding: 14px 16px 12px;
+      padding: 12px 16px 10px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-shrink: 0;
+      opacity: 0.85;
     }
 
     .log-stream {
@@ -546,8 +574,9 @@
       overflow-y: auto;
       padding: 12px 0;
       font-family: var(--mono);
-      font-size: 11px;
+      font-size: 10.5px;
       line-height: 1.7;
+      opacity: 0.88;
     }
     .log-stream::-webkit-scrollbar { width: 4px; }
     .log-stream::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -558,21 +587,21 @@
       gap: 10px;
       align-items: baseline;
     }
-    .log-entry:hover { background: rgba(255,255,255,0.02); }
+    .log-entry:hover { background: rgba(255,255,255,0.015); }
 
     .log-time {
       color: var(--text-muted);
       flex-shrink: 0;
-      font-size: 10px;
+      font-size: 9.5px;
     }
-    .log-msg { color: var(--text-dim); word-break: break-word; }
-    .log-msg.info { color: var(--text-dim); }
-    .log-msg.success { color: var(--success); }
-    .log-msg.warn { color: var(--warning); }
-    .log-msg.error { color: var(--error); }
-    .log-msg.accent { color: var(--accent); }
-    .log-msg.header { color: var(--text); font-weight: 400; }
-    .log-msg.dim { color: var(--text-muted); }
+    .log-msg { color: var(--text-muted); word-break: break-word; }
+    .log-msg.info { color: var(--text-muted); }
+    .log-msg.success { color: var(--success); opacity: 0.8; }
+    .log-msg.warn { color: var(--warning); opacity: 0.85; }
+    .log-msg.error { color: var(--error); opacity: 0.9; }
+    .log-msg.accent { color: var(--accent); opacity: 0.8; }
+    .log-msg.header { color: var(--text-dim); font-weight: 400; }
+    .log-msg.dim { color: var(--text-muted); opacity: 0.7; }
 
     .log-separator {
       height: 1px;
@@ -670,6 +699,109 @@
       font-family: var(--mono);
     }
 
+    /* ── Import from Workfront — primary action ───────────────────── */
+    .btn-workfront {
+      width: 100%;
+      padding: 10px;
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      color: var(--noir);
+      font-family: var(--sans);
+      font-weight: 500;
+      font-size: 12.5px;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      box-shadow: 0 2px 10px var(--accent-glow);
+    }
+    .btn-workfront:hover:not(:disabled) {
+      background: var(--cognac);
+      border-color: var(--cognac);
+      box-shadow: 0 2px 14px var(--accent-glow);
+    }
+    .btn-workfront:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+    .btn-workfront svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    .mock-badge {
+      display: inline-block;
+      font-size: 8px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--noir);
+      background: var(--warning);
+      border-radius: 3px;
+      padding: 1px 5px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    .wf-dialog-body { padding: 0; }
+    .wf-dialog-sub {
+      padding: 10px 18px;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--sans);
+      border-bottom: 1px solid var(--border);
+    }
+    .wf-list {
+      max-height: 50vh;
+      overflow-y: auto;
+    }
+    .wf-item {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.15s;
+      font-family: var(--sans);
+    }
+    .wf-item:last-child { border-bottom: none; }
+    .wf-item:hover { background: var(--panel-hi); }
+    .wf-item-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .wf-item-product {
+      font-size: 12.5px;
+      color: var(--text);
+      font-weight: 500;
+    }
+    .wf-item-status {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--success);
+      border: 1px solid var(--success);
+      border-radius: 3px;
+      padding: 1px 6px;
+      flex-shrink: 0;
+    }
+    .wf-item-meta {
+      font-size: 10.5px;
+      color: var(--text-dim);
+      font-family: var(--mono);
+    }
+    .wf-item-task {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: var(--mono);
+      margin-top: 3px;
+    }
+    .wf-empty, .wf-loading {
+      padding: 28px 18px;
+      text-align: center;
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+
     /* ── Palette chip strip ─────────────────────────────────────── */
     .palette-strip {
       display: flex;
@@ -702,6 +834,94 @@
       transition: opacity 0.15s;
     }
     .palette-chip:hover::after { opacity: 1; }
+
+    /* ── Palette editor dialog ──────────────────────────────────── */
+    .pal-edit-body { padding: 0; }
+    .pal-edit-list {
+      max-height: 46vh;
+      overflow-y: auto;
+      padding: 12px 18px 4px;
+    }
+    .pal-edit-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .pal-edit-swatch {
+      width: 26px; height: 26px;
+      border-radius: 5px;
+      border: 1px solid var(--border-hi);
+      flex-shrink: 0;
+      padding: 0;
+      cursor: pointer;
+      background: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .pal-edit-swatch::-webkit-color-swatch-wrapper { padding: 0; border-radius: 5px; }
+    .pal-edit-swatch::-webkit-color-swatch { border: none; border-radius: 5px; }
+    .pal-edit-swatch::-moz-color-swatch { border: none; border-radius: 5px; }
+    .pal-edit-row input[type="text"] {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 11.5px;
+      padding: 6px 8px;
+      outline: none;
+    }
+    .pal-edit-row input[type="text"]:focus { border-color: var(--border-hi); }
+    .pal-edit-name { flex: 1; min-width: 0; }
+    .pal-edit-hex { width: 78px; font-family: var(--mono); text-transform: uppercase; flex-shrink: 0; }
+    .pal-edit-remove {
+      width: 24px; height: 24px;
+      border: none; background: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 4px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+    .pal-edit-remove:hover { background: var(--panel-hi); color: var(--error); }
+
+    .pal-edit-footer {
+      padding: 12px 18px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+    }
+    .btn-pal-add, .btn-pal-reset, .btn-pal-done {
+      padding: 7px 12px;
+      border-radius: var(--radius);
+      font-family: var(--sans);
+      font-size: 11.5px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-pal-add {
+      background: transparent;
+      border: 1px solid var(--border-hi);
+      color: var(--text-dim);
+    }
+    .btn-pal-add:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-pal-reset {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .btn-pal-reset:hover { color: var(--error); border-color: var(--error); }
+    .btn-pal-done {
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      color: var(--noir);
+      font-weight: 500;
+      margin-left: auto;
+    }
+    .btn-pal-done:hover { background: var(--cognac); border-color: var(--cognac); }
 
     /* Tabs (main view) */
     #tab-generate { display: block; }
@@ -820,9 +1040,26 @@
 
     <div class="panel-scroll">
 
-      <!-- PDF upload -->
+      <!-- Workfront import (mock) — primary path -->
       <div class="form-section">
-        <div class="form-section-label">Import from PDF</div>
+        <div class="form-section-label">
+          Import from Workfront
+          <span class="mock-badge">Mock</span>
+        </div>
+        <button class="btn-workfront" id="btn-workfront" onclick="openWorkfrontDialog()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+            <path d="m3.3 7 8.7 5 8.7-5"/>
+            <path d="M12 22V12"/>
+          </svg>
+          Browse ready briefings
+        </button>
+      </div>
+
+      <div class="import-divider">or import a PDF</div>
+
+      <!-- PDF upload — secondary / fallback path -->
+      <div class="form-section">
         <div class="upload-area" id="upload-area">
           <input type="file" id="pdf-input" accept=".pdf" onchange="onPdfSelected(event)" />
           <div class="upload-icon">
@@ -872,7 +1109,7 @@
         <div class="form-section-label">Optional</div>
         <div class="field">
           <label>Brand</label>
-          <input type="text" id="f-brand" placeholder="e.g. Dermalab" />
+          <input type="text" id="f-brand" placeholder="e.g. FullCosmetics — The Force of Beauty" />
         </div>
         <div class="field">
           <label>Campaign name</label>
@@ -886,8 +1123,11 @@
 
       <!-- Brand palette -->
       <div class="form-section">
-        <div class="form-section-label">Brand palette</div>
-        <div class="palette-strip">
+        <div class="form-section-label-row">
+          <div class="form-section-label">Brand palette</div>
+          <button class="panel-action" onclick="openPaletteEditor()">Edit</button>
+        </div>
+        <div class="palette-strip" id="palette-strip">
           <div class="palette-chip" style="background:#F9EDEF" data-name="Blush"></div>
           <div class="palette-chip" style="background:#E5C8B6" data-name="Champagne"></div>
           <div class="palette-chip" style="background:#C3955A" data-name="Cognac"></div>
@@ -1057,6 +1297,40 @@
   </div>
 </div>
 
+<!-- ── Workfront ready briefings dialog (mock) ─────────────────────── -->
+<div class="dialog-backdrop" id="wf-dialog" onclick="closeWfDialog(event)">
+  <div class="dialog">
+    <div class="dialog-header">
+      <span class="dialog-title">Workfront — Ready Briefings <span class="mock-badge">Mock</span></span>
+      <button class="dialog-close" onclick="closeWfDialog()">×</button>
+    </div>
+    <div class="dialog-body wf-dialog-body">
+      <div class="wf-dialog-sub">Simulated response — no live Workfront connection. Select a briefing to load it into the form.</div>
+      <div class="wf-list" id="wf-list">
+        <div class="wf-loading">Loading…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Brand palette editor dialog ──────────────────────────────────── -->
+<div class="dialog-backdrop" id="pal-dialog" onclick="closePaletteEditor(event)">
+  <div class="dialog">
+    <div class="dialog-header">
+      <span class="dialog-title">Edit Brand Palette</span>
+      <button class="dialog-close" onclick="closePaletteEditor()">×</button>
+    </div>
+    <div class="dialog-body pal-edit-body">
+      <div class="pal-edit-list" id="pal-edit-list"></div>
+      <div class="pal-edit-footer">
+        <button class="btn-pal-add" onclick="addPaletteColor()">+ Add color</button>
+        <button class="btn-pal-reset" onclick="resetPalette()">Reset to default</button>
+        <button class="btn-pal-done" onclick="closePaletteEditor()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Toast container ──────────────────────────────────────────────── -->
 <div class="toast-container" id="toast-container"></div>
 
@@ -1071,11 +1345,27 @@ let isRunning = false;
 let pdfFile = null;
 let history = JSON.parse(localStorage.getItem('ff_history') || '[]');
 
+/* ── Brand palette ────────────────────────────────────────────────── */
+const DEFAULT_PALETTE = [
+  { name: 'Blush',      hex: '#F9EDEF' },
+  { name: 'Champagne',  hex: '#E5C8B6' },
+  { name: 'Cognac',     hex: '#C3955A' },
+  { name: 'Amber',      hex: '#BA6A37' },
+  { name: 'Emerald',    hex: '#1C3934' },
+  { name: 'Noir',       hex: '#131315' },
+  { name: 'Espresso',   hex: '#241515' },
+  { name: 'Cappuccino', hex: '#EBEAE0' },
+  { name: 'Cream',      hex: '#F3F2EB' },
+  { name: 'Flat White', hex: '#F9F9F9' },
+];
+let palette = JSON.parse(localStorage.getItem('ff_palette') || 'null') || DEFAULT_PALETTE.slice();
+
 /* ── Boot ─────────────────────────────────────────────────────────── */
 window.addEventListener('DOMContentLoaded', () => {
   log('System', 'FullForce Ad Generator ready', 'accent');
   log('System', `API: ${API_BASE}`, 'dim');
   renderHistory();
+  renderPaletteStrip();
 });
 
 /* ── Tab switching ────────────────────────────────────────────────── */
@@ -1168,7 +1458,168 @@ async function extractBrief() {
   }
 }
 
-/* ── Generate ─────────────────────────────────────────────────────── */
+/* ── Workfront import (mock) ─────────────────────────────────────── */
+function openWorkfrontDialog() {
+  document.getElementById('wf-dialog').classList.add('open');
+  loadWorkfrontBriefings();
+}
+
+function closeWfDialog(e) {
+  if (!e || e.target.id === 'wf-dialog' || e.target.classList.contains('dialog-close')) {
+    document.getElementById('wf-dialog').classList.remove('open');
+  }
+}
+
+async function loadWorkfrontBriefings() {
+  const list = document.getElementById('wf-list');
+  list.innerHTML = `<div class="wf-loading">Loading…</div>`;
+  log('Workfront', '▶ Fetching ready briefings (mock)', 'header');
+
+  try {
+    const resp = await fetch(`${API_BASE}/workfront/ready_briefings?limit=10`);
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+      throw new Error(err.detail || resp.statusText);
+    }
+    const data = await resp.json();
+    const briefings = data.briefings || [];
+
+    log('Workfront', `✓ ${briefings.length} briefing(s) in Ready status`, 'success');
+
+    if (!briefings.length) {
+      list.innerHTML = `<div class="wf-empty">No briefings currently in Ready status.</div>`;
+      return;
+    }
+
+    list.innerHTML = briefings.map((b, idx) => {
+      const p = b.briefing_payload || {};
+      return `
+        <div class="wf-item" onclick="selectWorkfrontBriefing(${idx})">
+          <div class="wf-item-top">
+            <span class="wf-item-product">${escHtml(p.product || 'Untitled product')}</span>
+            <span class="wf-item-status">${escHtml(b.status || 'Ready')}</span>
+          </div>
+          <div class="wf-item-meta">${escHtml(p.brand || '—')} · ${escHtml(p.campaign_name || '—')} · ${escHtml(p.season || '—')}</div>
+          <div class="wf-item-task">${escHtml(b.workfront_task_id || '')} · ${escHtml(b.workfront_project_id || '')}</div>
+        </div>
+      `;
+    }).join('');
+
+    window._wfBriefings = briefings;
+  } catch (err) {
+    log('Workfront', `✗ Error: ${err.message}`, 'error');
+    list.innerHTML = `<div class="wf-empty">Failed to load briefings: ${escHtml(err.message)}</div>`;
+  }
+}
+
+function selectWorkfrontBriefing(idx) {
+  const briefings = window._wfBriefings || [];
+  const item = briefings[idx];
+  if (!item) return;
+  const p = item.briefing_payload || {};
+
+  setField('f-product', p.product);
+  setField('f-season', p.season);
+  setField('f-audience', p.audience);
+  setField('f-goal', p.goal);
+  setField('f-tone', p.tone_of_voice);
+  setField('f-brand', p.brand || '');
+  setField('f-campaign', p.campaign_name || '');
+  setField('f-messages', (p.key_messages || []).join('\n'));
+
+  log('Workfront', `Loaded briefing from task ${item.workfront_task_id} — ${p.product}`, 'success');
+  toast('Briefing loaded from Workfront (mock).', 'success');
+  closeWfDialog();
+}
+
+/* ── Brand palette ────────────────────────────────────────────────── */
+function renderPaletteStrip() {
+  const strip = document.getElementById('palette-strip');
+  strip.innerHTML = palette.map(c => {
+    const borderStyle = isLight(c.hex) ? '' : 'border-color:rgba(255,255,255,0.15)';
+    return `<div class="palette-chip" style="background:${c.hex};${borderStyle}" data-name="${escHtml(c.name)}"></div>`;
+  }).join('');
+}
+
+function isLight(hex) {
+  const h = hex.replace('#', '');
+  if (h.length !== 6) return false;
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 200;
+}
+
+function savePalette() {
+  localStorage.setItem('ff_palette', JSON.stringify(palette));
+  renderPaletteStrip();
+}
+
+function openPaletteEditor() {
+  renderPaletteEditList();
+  document.getElementById('pal-dialog').classList.add('open');
+}
+function closePaletteEditor(e) {
+  if (!e || e.target.id === 'pal-dialog' || e.target.classList.contains('dialog-close') || e.target.classList.contains('btn-pal-done')) {
+    document.getElementById('pal-dialog').classList.remove('open');
+  }
+}
+
+function renderPaletteEditList() {
+  const list = document.getElementById('pal-edit-list');
+  list.innerHTML = palette.map((c, i) => `
+    <div class="pal-edit-row">
+      <input type="color" class="pal-edit-swatch" value="${toColorInputValue(c.hex)}"
+             oninput="updatePaletteField(${i}, 'hex', this.value)" />
+      <input type="text" class="pal-edit-name" value="${escHtml(c.name)}"
+             placeholder="Color name" oninput="updatePaletteField(${i}, 'name', this.value)" />
+      <input type="text" class="pal-edit-hex" value="${escHtml(c.hex)}"
+             placeholder="#RRGGBB" maxlength="7" oninput="updatePaletteField(${i}, 'hex', this.value)" />
+      <button class="pal-edit-remove" onclick="removePaletteColor(${i})" title="Remove">×</button>
+    </div>
+  `).join('');
+}
+
+function toColorInputValue(hex) {
+  return /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '#000000';
+}
+
+function updatePaletteField(index, field, value) {
+  if (!palette[index]) return;
+  if (field === 'hex') {
+    let v = value.trim();
+    if (v && !v.startsWith('#')) v = '#' + v;
+    palette[index].hex = v;
+  } else {
+    palette[index].name = value;
+  }
+  savePalette();
+  // Keep the row's own inputs in sync without a full re-render (avoids losing focus)
+  const rows = document.querySelectorAll('#pal-edit-list .pal-edit-row');
+  const row = rows[index];
+  if (row && field === 'hex' && /^#[0-9a-fA-F]{6}$/.test(palette[index].hex)) {
+    row.querySelector('.pal-edit-swatch').value = palette[index].hex;
+  }
+}
+
+function addPaletteColor() {
+  palette.push({ name: 'New color', hex: '#999999' });
+  savePalette();
+  renderPaletteEditList();
+}
+
+function removePaletteColor(index) {
+  palette.splice(index, 1);
+  savePalette();
+  renderPaletteEditList();
+}
+
+function resetPalette() {
+  palette = DEFAULT_PALETTE.slice();
+  savePalette();
+  renderPaletteEditList();
+  toast('Palette reset to default.', 'success');
+}
+
+
 async function generate() {
   if (isRunning) return;
 
@@ -1427,6 +1878,7 @@ function setRunning(val) {
   isRunning = val;
   document.getElementById('btn-generate').disabled = val;
   document.getElementById('btn-extract').disabled = val || !pdfFile;
+  document.getElementById('btn-workfront').disabled = val;
 }
 function setStatus(state, label) {
   const dot = document.getElementById('status-dot');

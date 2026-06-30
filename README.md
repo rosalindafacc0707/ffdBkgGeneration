@@ -220,7 +220,7 @@ ffdBkgGeneration/
     ├── __init__.py
     ├── test_campaign.py                ← campaign generation tests
     ├── test_mcp_server.py              ← MCP integration regression tests
-    └── brief_test_dermalab.pdf         ← example PDF for brief extraction testing
+    └── brief_test_fullcosmetics.pdf         ← example PDF for brief extraction testing
 ```
 
 ---
@@ -244,7 +244,7 @@ curl -X POST http://localhost:8000/api/v1/campaign/brief_insights_extraction \
   "audience": "Women 35-55, skin-conscious, premium lifestyle",
   "goal": "Increase brand awareness in the premium skincare segment",
   "tone_of_voice": "Sophisticated, reassuring, slightly clinical",
-  "brand": "Dermalab",
+  "brand": "FullCosmetics — The Force of Beauty",
   "campaign_name": "Winter Ritual 2025",
   "key_messages": [
     "Deep skin regeneration while you sleep",
@@ -276,7 +276,7 @@ curl -X POST http://localhost:8000/api/v1/campaign/generate \
     "audience": "Women 35-55, skin-conscious, premium lifestyle",
     "goal": "Increase brand awareness",
     "tone_of_voice": "Sophisticated and reassuring",
-    "brand": "Dermalab",
+    "brand": "FullCosmetics — The Force of Beauty",
     "campaign_name": "Winter Ritual 2025",
     "key_messages": ["Deep skin regeneration", "Clinically tested"]
   }'
@@ -549,7 +549,7 @@ curl -X POST http://localhost:8000/mcp/call \
       "audience": "Women 35-55",
       "goal": "Increase brand awareness",
       "tone_of_voice": "Sophisticated and reassuring",
-      "brand": "Dermalab"
+      "brand": "FullCosmetics — The Force of Beauty"
     }
   }'
 ```
@@ -598,7 +598,7 @@ You can invoke the MCP server from Workfront automation:
       "audience": "{target_audience}",
       "goal": "{campaign_goal}",
       "tone_of_voice": "Professional",
-      "brand": "Dermalab"
+      "brand": "FullCosmetics — The Force of Beauty"
     }
   }
 }
@@ -645,7 +645,7 @@ pytest tests/ -v
 ```
 
 > Requires active Ollama with `llama3.2` and `gemma4:e4b`.
-> To test `brief_insights_extraction` use `tests/brief_test_dermalab.pdf`.
+> To test `brief_insights_extraction` use `tests/brief_test_fullcosmetics.pdf`.
 
 ---
 
