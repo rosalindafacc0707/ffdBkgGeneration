@@ -19,6 +19,60 @@ from app.agents.image_generator import generate_image_from_prompt
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_PALETTE = [
+    ("Blush", "#F9EDEF"),
+    ("Champagne", "#E5C8B6"),
+    ("Cognac", "#C3955A"),
+    ("Amber", "#BA6A37"),
+    ("Emerald", "#1C3934"),
+    ("Noir", "#131315"),
+    ("Espresso", "#241515"),
+    ("Cappuccino", "#EBEAE0"),
+    ("Cream", "#F3F2EB"),
+    ("Flat White", "#F9F9F9"),
+]
+
+
+def _normalize_palette(briefing) -> list[tuple[str, str]]:
+    palette_entries = getattr(briefing, "color_palette", None) or []
+    normalized = []
+
+    for entry in palette_entries:
+        if isinstance(entry, dict):
+            name = (entry.get("name") or "").strip()
+            hex_value = (entry.get("hex") or "").strip()
+        else:
+            name = getattr(entry, "name", "") or ""
+            hex_value = getattr(entry, "hex", "") or ""
+
+        if not name:
+            name = "Custom color"
+        if not hex_value:
+            continue
+        if not hex_value.startswith("#"):
+            hex_value = f"#{hex_value}"
+        normalized.append((name, hex_value))
+
+    if not normalized:
+        return list(DEFAULT_PALETTE)
+    return normalized
+
+
+def build_palette_context(briefing) -> str:
+    palette = _normalize_palette(briefing)
+    palette_text = " · ".join(f"{name} {hex_value}" for name, hex_value in palette[:6])
+    mood_hint = " ".join(
+        part for part in [briefing.season, briefing.tone_of_voice, briefing.goal] if part
+    ).strip()
+
+    return f"""Palette source of truth (frontend-selected if available): {palette_text}
+Selection guidance:
+- Choose 2-4 colors from this palette based on the campaign mood, season, and product.
+- Use one dominant wall tone, one secondary shadow tone, and optionally one lighter floor tone.
+- Match the palette to the briefing context ({mood_hint or 'general campaign mood'}), not to a fixed default.
+- Prefer the provided frontend colors; do not invent unrelated colors.
+"""
+
 
 VISUAL_EXPERT_SYSTEM_PROMPT = """You are a commercial photography art director and FLUX Schnell prompt engineer.
 Your only task is to write a SHORT, DENSE, technically precise FLUX Schnell prompt that generates a studio infinity cove background — completely empty, ready for pack-shot product compositing.
@@ -42,10 +96,10 @@ ABSOLUTE RULES — never break these:
 - Light source is NEVER visible — only its gradient effect on the wall surface.
 - No people, no hands, no text, no logos, no patterns, no tiles, no gloss, no reflections.
 
-STRICT BRAND PALETTE — choose the most fitting for the campaign mood:
-Blush #F9EDEF · Champagne #E5C8B6 · Cognac #C3955A · Amber #BA6A37
-Emerald #1C3934 · Noir #131315 · Espresso #241515
-Cappuccino #EBEAE0 · Cream #F3F2EB · Flat White #F9F9F9
+PALETTE RULES — use the palette provided in the briefing context as the source of truth:
+- Pick the most fitting colors from that palette for the campaign mood, season, audience, and product.
+- Use 2-4 colors max, with one dominant wall tone, one secondary shadow tone, and optionally one floor tone.
+- Keep the palette coherent and premium; do not invent unrelated colors.
 
 FORBIDDEN WORDS — never include in output:
 product, placement, compositing, backdrop for, surface for, podium, pedestal, riser,
@@ -61,8 +115,8 @@ OUTPUT: 50-90 words, comma-separated, NO sentences. Respond ONLY in this JSON:
 
 
 REFERENCE_PROMPT_EXAMPLE = """
-REFERENCE EXAMPLE of a correct FLUX Schnell output (Amber/Cognac palette, 72 words):
-\"Infinity cove studio, seamless limewash plaster, warm Amber #BA6A37 wall, Cognac #C3955A shadow zone, diagonal studio raking light upper-left, feathered penumbra, bright lit wall panel upper-left, deep shadow lower-right, floor Champagne #E5C8B6 lighter tone, tonal gradient falloff, microcement matte texture, ultra-matte finish, zero specular, zero reflections, no windows visible, ambient occlusion corner curve, cyclorama, completely empty, no objects, no props, no decorations, 4K\"
+REFERENCE EXAMPLE of a correct FLUX Schnell output using a warm premium palette (72 words):
+\"Infinity cove studio, seamless limewash plaster, warm dominant wall tone, secondary shadow zone, diagonal studio raking light upper-left, feathered penumbra, bright lit wall panel upper-left, deep shadow lower-right, floor lighter tone, tonal gradient falloff, microcement matte texture, ultra-matte finish, zero specular, zero reflections, no windows visible, ambient occlusion corner curve, cyclorama, completely empty, no objects, no props, no decorations, 4K\"
 """
 
 
@@ -85,11 +139,12 @@ async def visual_expert_node(state: CampaignState) -> CampaignState:
         keep_alive=-1,
     )
 
+    palette_context = build_palette_context(briefing)
+
     user_prompt = f"""Generate a FLUX image prompt for a completely empty studio infinity cove background.
 The aesthetic target is: warm matte plaster infinity cove, sharp diagonal light beam from upper-left, not strong tonal contrast between lit and shadow areas, pack-shot ready, zero objects.
 
-Select the most fitting palette colors for this campaign's mood and season from:
-Blush #F9EDEF · Champagne #E5C8B6 · Cognac #C3955A · Amber #BA6A37 · Emerald #1C3934 · Noir #131315 · Espresso #241515 · Cappuccino #EBEAE0 · Cream #F3F2EB · Flat White #F9F9F9
+{palette_context}
 
 CAMPAIGN BRIEFING:
 - Product: {briefing.product}
