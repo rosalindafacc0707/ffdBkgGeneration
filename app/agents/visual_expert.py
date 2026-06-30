@@ -20,16 +20,16 @@ from app.agents.image_generator import generate_image_from_prompt
 logger = logging.getLogger(__name__)
 
 DEFAULT_PALETTE = [
-    ("Blush", "#F9EDEF"),
-    ("Champagne", "#E5C8B6"),
-    ("Cognac", "#C3955A"),
-    ("Amber", "#BA6A37"),
-    ("Emerald", "#1C3934"),
-    ("Noir", "#131315"),
-    ("Espresso", "#241515"),
-    ("Cappuccino", "#EBEAE0"),
-    ("Cream", "#F3F2EB"),
-    ("Flat White", "#F9F9F9"),
+    ("Muted Pastel Pink / Pale Shell Pink", "#F9EDEF"),
+    ("Dusty Rose-Beige / Warm Peach-Tinted Tan", "#E5C8B6"),
+    ("Rich Toffee Gold / Ochre Brown", "#C3955A"),
+    ("Burnt Terracotta Orange / Deep Amber", "#BA6A37"),
+    ("Deep Forest Green / Midnight Emerald", "#1C3934"),
+    ("Absolute Obsidian Black / Matte Jet Black", "#131315"),
+    ("Deep Dark Chocolate Brown / Near-Black Espresso", "#241515"),
+    ("Light Warm Gray / Greige", "#EBEAE0"),
+    ("Alabaster White / Warm Ivory", "#F3F2EB"),
+    ("Pure Minimalist White / Crisp White", "#F9F9F9"),
 ]
 
 
@@ -114,7 +114,7 @@ OUTPUT: 50-90 words, comma-separated, NO sentences. Respond ONLY in this JSON:
 
 REFERENCE_PROMPT_EXAMPLE = """
 REFERENCE EXAMPLE of an artistic FLUX Schnell output (approx. 65 words):
-\"Abstract tonal backdrop, painterly Champagne #E5C8B6 wash, soft Amber #BA6A37 midfield, subtle Cognac #C3955A shadow shift, gentle diagonal warm wash upper-left, feathered penumbra, soft vignette, canvas microtexture, brushed plaster grain, tonal gradient falloff, atmospheric haze, muted contrast, no horizon, no floor seam, no objects or props, minimal composition, pack-shot ready\"
+\"Abstract tonal backdrop, painterly Dusty Rose-Beige / Warm Peach-Tinted Tan #E5C8B6 wash, soft Burnt Terracotta Orange / Deep Amber #BA6A37 midfield, subtle Rich Toffee Gold / Ochre Brown #C3955A shadow shift, gentle diagonal warm wash upper-left, feathered penumbra, soft vignette, canvas microtexture, brushed plaster grain, tonal gradient falloff, atmospheric haze, muted contrast, no horizon, no floor seam, no objects or props, minimal composition, pack-shot ready\"
 """
 
 
