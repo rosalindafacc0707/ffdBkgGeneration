@@ -3,10 +3,17 @@ FastAPI Routes — Campaign API
 """
 import logging
 import base64
+import os
+import time
+from docx import Document
+from docx.shared import Pt, Inches, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from io import BytesIO
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, JSONResponse
-from app.core.schemas import BriefingInput, BriefingJson, CampaignOutput, CopyOnlyOutput, VisualOnlyOutput
+from app.core.schemas import BriefingInput, BriefingJson, CampaignOutput, CopyOnlyOutput, VisualOnlyOutput, AssemblyOutput, ContentAssemblyInput
+from app.core.config import settings
 from app.agents.coordinator import run_campaign, run_copy, run_visual
 from app.agents.brief_extractor import run_generate_brief_json
 from app.mcp.workfront_mock import get_ready_briefings
@@ -188,3 +195,151 @@ async def get_ready_briefings_mock(limit: int = 5, project_id: str | None = None
     except Exception as e:
         logger.error("API error (workfront mock): %s", e)
         raise HTTPException(status_code=500, detail=f"Errore mock Workfront: {e}")
+
+@router.post(
+    "/campaign/assemble_content",
+    response_model=AssemblyOutput,
+    summary="Upload assets to OneDrive assembly folder",
+    description="Salva la copia generata in formato .docx e l'immagine corrente in formato .png nella cartella OneDrive ffd_prototype_images.",
+)
+async def assemble_content(payload: ContentAssemblyInput):
+    # Costruiamo il percorso verso la cartella OneDrive basandoci sulla configurazione esistente
+    base_onedrive = os.path.dirname(settings.onedrive_images_dir)
+    assembly_dir = Path(base_onedrive) / "ffd_prototype_images"
+    assembly_dir.mkdir(parents=True, exist_ok=True)
+    
+    timestamp = int(time.time())
+    product_slug = (payload.product or "product").lower().replace(" ", "_")[:20]
+    
+    saved_files = []
+    
+    # 1. SALVATAGGIO IMMAGINE .PNG
+    if payload.image_base64:
+        try:
+            img_data = base64.b64decode(payload.image_base64)
+            img_path = assembly_dir / f"bg_{product_slug}_{timestamp}.png"
+            with open(img_path, "wb") as f:
+                f.write(img_data)
+            saved_files.append(str(img_path))
+            logger.info(f" [ASSEMBLY] Immagine salvata su OneDrive: {img_path}")
+        except Exception as e:
+            logger.error(f" [ASSEMBLY] Errore salvataggio immagine: {e}")
+            raise HTTPException(status_code=500, detail=f"Errore scrittura PNG: {e}")
+
+    # 2. SALVATAGGIO COPY .DOCX IN STRUTTURA PROFESSIONALE
+    try:
+        doc = Document()
+        
+        # Setup Margini standard aziendali
+        for section in doc.sections:
+            section.top_margin = Inches(1)
+            section.bottom_margin = Inches(1)
+            section.left_margin = Inches(1)
+            section.right_margin = Inches(1)
+
+        # Palette Colore Professionale basata sui token della UI
+        COLOR_PRIMARY = RGBColor(19, 19, 21)     # Noir (#131315)
+        COLOR_ACCENT = RGBColor(195, 149, 90)    # Cognac (#C3955A)
+        COLOR_MUTED = RGBColor(122, 120, 118)    # Text-dim (#7a7876)
+
+        # Intestazione Principale
+        p_title = doc.add_paragraph()
+        r_title = p_title.add_run("FullForce.digital — Campaign Asset Sheet")
+        r_title.font.name = 'Arial'
+        r_title.font.size = Pt(20)
+        r_title.font.bold = True
+        r_title.font.color.rgb = COLOR_PRIMARY
+        p_title.paragraph_format.space_after = Pt(2)
+
+        # Meta-dati della campagna
+        p_meta = doc.add_paragraph()
+        meta_text = f"Product: {payload.product}  |  Season: {payload.season}"
+        if payload.brand:
+            meta_text += f"  |  Brand: {payload.brand}"
+        r_meta = p_meta.add_run(meta_text)
+        r_meta.font.name = 'Arial'
+        r_meta.font.size = Pt(10)
+        r_meta.font.italic = True
+        r_meta.font.color.rgb = COLOR_MUTED
+        p_meta.paragraph_format.space_after = Pt(24)
+
+        # --- SEZIONE COPYWRITING ASSETS ---
+        h1 = doc.add_paragraph()
+        h1_run = h2_run = h1.add_run("1. Final Copywriting Components")
+        h1_run.font.name = 'Arial'
+        h1_run.font.size = Pt(14)
+        h1_run.font.bold = True
+        h1_run.font.color.rgb = COLOR_ACCENT
+        h1.paragraph_format.space_after = Pt(12)
+
+        # Tabella pulita per il layout di copy
+        table = doc.add_table(rows=1, cols=2)
+        table.style = 'Light Shading Accent 1'
+        hdr_cells = table.rows[0].cells
+        hdr_cells[0].text = 'Component'
+        hdr_cells[1].text = 'Content Text'
+        
+        for cell in hdr_cells:
+            for p in cell.paragraphs:
+                for r in p.runs:
+                    r.font.bold = True
+                    r.font.name = 'Arial'
+                    r.font.size = Pt(11)
+
+        # Mapping dei dati estratti dal frontend (con fallback in caso di stringa vuota o trattino)
+        copy_data = [
+            ("Top Label", payload.custom_top_label),
+            ("Headline", payload.custom_headline),
+            ("Description / Subheadline", payload.custom_subheadline)
+        ]
+
+        for label, val in copy_data:
+            clean_val = val.strip() if val else "—"
+            if clean_val == "" or clean_val == "—":
+                clean_val = "—"
+                
+            row_cells = table.add_row().cells
+            row_cells[0].text = label
+            row_cells[1].text = clean_val
+            
+            for cell in row_cells:
+                for p in cell.paragraphs:
+                    p.paragraph_format.space_before = Pt(6)
+                    p.paragraph_format.space_after = Pt(6)
+                    for r in p.runs:
+                        r.font.name = 'Arial'
+                        r.font.size = Pt(10.5)
+                        r.font.color.rgb = COLOR_PRIMARY
+
+        doc.add_paragraph().paragraph_format.space_after = Pt(24)
+
+        # --- SEZIONE PROMPT DI GENERAZIONE ---
+        if payload.image_prompt:
+          h2 = doc.add_paragraph()
+          h2_run = h2.add_run("2. Applied Image Prompt Context")
+          h2_run.font.name = 'Arial'
+          h2_run.font.size = Pt(14)
+          h2_run.font.bold = True
+          h2_run.font.color.rgb = COLOR_ACCENT
+          h2.paragraph_format.space_after = Pt(8)
+
+          p_prompt = doc.add_paragraph()
+          r_prompt = p_prompt.add_run(payload.image_prompt)
+          r_prompt.font.name = 'Courier New'
+          r_prompt.font.size = Pt(9.5)
+          r_prompt.font.color.rgb = COLOR_PRIMARY
+          p_prompt.paragraph_format.space_after = Pt(12)
+
+        doc_path = assembly_dir / f"copy_{product_slug}_{timestamp}.docx"
+        doc.save(str(doc_path))
+        saved_files.append(str(doc_path))
+        logger.info(f" [ASSEMBLY] Documento DOCX salvato su OneDrive: {doc_path}")
+        
+    except Exception as e:
+        logger.error(f" [ASSEMBLY] Errore salvataggio documento DOCX: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore scrittura DOCX: {e}")
+        
+    return {
+        "status": "success",
+        "saved_files": saved_files
+    }

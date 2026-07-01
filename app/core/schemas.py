@@ -89,3 +89,26 @@ class BriefingJson(BaseModel):
     raw_extraction: Optional[str] = Field(None, description="raw text extracted from the PDF")
 
     model_config = {"populate_by_name": True}
+
+class AssemblyOutput(BaseModel):
+    status: str
+    saved_files: list[str]
+
+
+class ContentAssemblyInput(BaseModel):
+    product: str
+    season: str
+    brand: Optional[str] = None
+    audience: Optional[str] = None
+    goal: Optional[str] = None
+    tone_of_voice: Optional[str] = None
+    key_messages: Optional[list[str]] = None
+    
+    # Campi custom compilati o editati a schermo dall'utente
+    custom_top_label: Optional[str] = None
+    custom_headline: Optional[str] = None
+    custom_subheadline: Optional[str] = None
+    
+    # Prompt e asset visuale attivo passati dal frontend
+    image_prompt: Optional[str] = None
+    image_base64: Optional[str] = None
