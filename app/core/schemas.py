@@ -24,6 +24,10 @@ class BriefingInput(BaseModel):
     )
     raw_extraction: Optional[str] = Field(None, description="raw text extracted from the PDF")
 
+    # NUOVI CAMPI: per supportare lo skip del Visual Expert e il prompt personalizzato
+    skip_visual_expert: Optional[bool] = Field(False, description="Skip LLM prompt optimization and use raw image_prompt")
+    image_prompt: Optional[str] = Field(None, description="Custom prompt modified by the user")
+
     model_config = {"populate_by_name": True}
 
 

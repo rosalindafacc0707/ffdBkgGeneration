@@ -56,7 +56,7 @@
     .app {
       display: grid;
       grid-template-rows: 48px auto;
-      grid-template-columns: 280px 1fr 340px;
+      grid-template-columns: 280px 1fr;
       min-height: 100vh;
       overflow: visible;
     }
@@ -280,7 +280,7 @@
       font-family: var(--mono);
     }
 
-    /* Extract button — secondary, low-emphasis (PDF import is a fallback path) */
+    /* Extract button — secondary, low-emphasis */
     .btn-extract {
       width: 100%;
       padding: 6px;
@@ -418,6 +418,37 @@
       100% { transform: rotate(360deg); }
     }
 
+    .image-nav-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(195,149,90,0.06);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: var(--radius);
+    }
+    .btn-nav-arrow {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      padding: 0 4px;
+      display: flex;
+      align-items: center;
+      transition: color 0.15s;
+    }
+    .btn-nav-arrow:hover:not(:disabled) { color: var(--accent); }
+    .btn-nav-arrow:disabled { color: var(--text-muted); cursor: not-allowed; }
+    .image-nav-counter {
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--text-dim);
+      min-width: 32px;
+      text-align: center;
+    }
+
     .copy-card-header {
       display: flex;
       align-items: center;
@@ -522,7 +553,7 @@
     .copy-field-value.top-label { letter-spacing: 0.08em; text-transform: uppercase; font-size: 11px; color: var(--accent); }
     .copy-field-value.headline { font-size: 16px; font-weight: 500; }
     .copy-field-value.subheadline { font-style: italic; color: var(--text); }
-    
+     
     .badges-container {
       display: flex;
       gap: 6px;
@@ -564,76 +595,6 @@
     }
     .shimmer-block { height: 14px; margin-bottom: 8px; }
     .shimmer-img { width: 100%; aspect-ratio: 4/3; }
-
-    /* ── RIGHT PANEL — Agent log ─────────────────────────────────── */
-    .right-panel {
-      border-left: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      background: var(--noir);
-    }
-
-    .log-header {
-      padding: 12px 16px 10px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-      opacity: 0.85;
-    }
-
-    .log-stream {
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px 0;
-      font-family: var(--mono);
-      font-size: 10.5px;
-      line-height: 1.7;
-      opacity: 0.88;
-    }
-    .log-stream::-webkit-scrollbar { width: 4px; }
-    .log-stream::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-    .log-entry {
-      padding: 1px 16px;
-      display: flex;
-      gap: 10px;
-      align-items: baseline;
-    }
-    .log-entry:hover { background: rgba(255,255,255,0.015); }
-
-    .log-time {
-      color: var(--text-muted);
-      flex-shrink: 0;
-      font-size: 9.5px;
-    }
-    .log-msg { color: var(--text-muted); word-break: break-word; }
-    .log-msg.info { color: var(--text-muted); }
-    .log-msg.success { color: var(--success); opacity: 0.8; }
-    .log-msg.warn { color: var(--warning); opacity: 0.85; }
-    .log-msg.error { color: var(--error); opacity: 0.9; }
-    .log-msg.accent { color: var(--accent); opacity: 0.8; }
-    .log-msg.header { color: var(--text-dim); font-weight: 400; }
-    .log-msg.dim { color: var(--text-muted); opacity: 0.7; }
-
-    .log-separator {
-      height: 1px;
-      background: var(--border);
-      margin: 6px 16px;
-    }
-
-    .btn-clear-log {
-      font-size: 10px;
-      color: var(--text-muted);
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-family: var(--sans);
-      padding: 0;
-    }
-    .btn-clear-log:hover { color: var(--text-dim); }
 
     /* ── TOAST ──────────────────────────────────────────────────── */
     .toast-container {
@@ -706,7 +667,7 @@
     }
     .dialog-close:hover { background: var(--panel-hi); }
     .dialog-body {
-      padding: 16px 18px;
+      padding: 16px 18px 4px;
       overflow-y: auto;
       font-size: 12px;
       line-height: 1.7;
@@ -714,15 +675,57 @@
       font-family: var(--mono);
       word-break: break-word;
     }
-    .prompt-text {
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      overflow-wrap: anywhere;
-      margin: 0;
+    .prompt-textarea {
       width: 100%;
+      height: 260px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.6;
+      padding: 12px;
+      outline: none;
+      resize: vertical;
+      transition: border-color 0.15s;
+    }
+    .prompt-textarea:focus {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+     
+    .prompt-dialog-footer {
+      padding: 12px 18px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+    }
+    .btn-prompt-regenerate {
+      padding: 7px 14px;
+      border-radius: var(--radius);
+      font-family: var(--sans);
+      font-size: 11.5px;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      color: var(--noir);
+      font-weight: 500;
+    }
+    .btn-prompt-regenerate:hover:not(:disabled) {
+      background: var(--champagne);
+      border-color: var(--champagne);
+    }
+    .btn-prompt-regenerate:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      background: transparent;
+      border-color: var(--border-hi);
+      color: var(--text-muted);
     }
 
-    /* ── Import from Workfront — primary action ───────────────────── */
+    /* ── Import from Workfront ────────────────────────────────────── */
     .btn-workfront {
       width: 100%;
       padding: 10px;
@@ -748,20 +751,6 @@
     }
     .btn-workfront:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
     .btn-workfront svg { width: 14px; height: 14px; flex-shrink: 0; }
-
-    .mock-badge {
-      display: inline-block;
-      font-size: 8px;
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--noir);
-      background: var(--warning);
-      border-radius: 3px;
-      padding: 1px 5px;
-      margin-left: 6px;
-      vertical-align: middle;
-    }
 
     .wf-dialog-body { padding: 0; }
     .wf-dialog-sub {
@@ -1064,7 +1053,6 @@
       <div class="form-section">
         <div class="form-section-label">
           Import from Workfront
-          <span class="mock-badge">Mock</span>
         </div>
         <button class="btn-workfront" id="btn-workfront" onclick="openWorkfrontDialog()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -1099,7 +1087,7 @@
       </div>
 
       <div class="form-section">
-        <div class="form-section-label">Required fields</div>
+        <div class="upload-label" style="text-align:left; margin-bottom:8px; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted);">Required fields</div>
 
         <div class="field">
           <label>Product <span class="required">*</span></label>
@@ -1238,6 +1226,13 @@
           </div>
           <div class="preview-meta">
             <span class="preview-model-tag" id="result-model">—</span>
+            
+            <div class="image-nav-container" id="image-version-nav" style="display:none;">
+              <button class="btn-nav-arrow" id="btn-version-prev" onclick="navigateVersion(-1)">◀</button>
+              <span class="image-nav-counter" id="version-counter">1 / 1</span>
+              <button class="btn-nav-arrow" id="btn-version-next" onclick="navigateVersion(1)">▶</button>
+            </div>
+
             <div style="display:flex;gap:12px;align-items:center;">
               <button class="btn-download" onclick="viewPrompt()">View prompt</button>
               <button class="btn-download" onclick="downloadImage()">Download PNG</button>
@@ -1289,15 +1284,6 @@
     </div>
   </main>
 
-  <aside class="right-panel">
-    <div class="log-header">
-      <span class="panel-title">Agent log</span>
-      <button class="btn-clear-log" onclick="clearLog()">Clear</button>
-    </div>
-    <div class="log-stream" id="log-stream">
-      </div>
-  </aside>
-
 </div>
 
 <div class="dialog-backdrop" id="prompt-dialog" onclick="closeDialog(event)">
@@ -1307,17 +1293,21 @@
       <button class="dialog-close" onclick="closeDialog()">×</button>
     </div>
     <div class="dialog-body" id="prompt-dialog-body"></div>
+    <div class="prompt-dialog-footer">
+      <button class="btn-prompt-regenerate" id="btn-prompt-regenerate" onclick="regenerateImageFromPrompt()" disabled>
+        Regenerate Image
+      </button>
+    </div>
   </div>
 </div>
 
 <div class="dialog-backdrop" id="wf-dialog" onclick="closeWfDialog(event)">
   <div class="dialog">
     <div class="dialog-header">
-      <span class="dialog-title">Workfront — Ready Briefings <span class="mock-badge">Mock</span></span>
+      <span class="dialog-title">Workfront — Ready Briefings</span>
       <button class="dialog-close" onclick="closeWfDialog()">×</button>
     </div>
     <div class="dialog-body wf-dialog-body">
-      <div class="wf-dialog-sub">Simulated response — no live Workfront connection. Select a briefing to load it into the form.</div>
       <div class="wf-list" id="wf-list">
         <div class="wf-loading">Loading…</div>
       </div>
@@ -1354,6 +1344,7 @@ let currentBriefing = null;
 let isRunning = false;
 let pdfFile = null;
 let history = JSON.parse(localStorage.getItem('ff_history') || '[]');
+let originalPromptText = ""; 
 
 /* ── Brand palette ────────────────────────────────────────────────── */
 const DEFAULT_PALETTE = [
@@ -1372,8 +1363,6 @@ let palette = JSON.parse(localStorage.getItem('ff_palette') || 'null') || DEFAUL
 
 /* ── Boot ─────────────────────────────────────────────────────────── */
 window.addEventListener('DOMContentLoaded', () => {
-  log('System', 'FullForce Assets Generator 4 Campaigns ready', 'accent');
-  log('System', `API: ${API_BASE}`, 'dim');
   renderHistory();
   renderPaletteStrip();
 });
@@ -1393,7 +1382,6 @@ function onPdfSelected(e) {
   pdfFile = file;
   document.getElementById('pdf-filename').textContent = file.name;
   document.getElementById('btn-extract').disabled = false;
-  log('PDF', `File selected: ${file.name} (${(file.size / 1024).toFixed(0)} KB)`, 'info');
 }
 
 // Drag-and-drop
@@ -1408,17 +1396,12 @@ uploadArea.addEventListener('drop', e => {
     pdfFile = file;
     document.getElementById('pdf-filename').textContent = file.name;
     document.getElementById('btn-extract').disabled = false;
-    log('PDF', `Dropped: ${file.name}`, 'info');
   }
 });
 
 async function extractBrief() {
   if (!pdfFile || isRunning) return;
   setRunning(true);
-  log('─'.repeat(36), '', 'dim');
-  log('Brief Extractor', `▶ Starting PDF extraction`, 'header');
-  log('Brief Extractor', `File: ${pdfFile.name}`, 'info');
-  log('Brief Extractor', `Model: ${document.getElementById('f-product').placeholder || 'llama3.2'}`, 'dim');
 
   setStep('brief', 'running');
   setStatus('running', 'Extracting brief…');
@@ -1440,11 +1423,6 @@ async function extractBrief() {
 
     const data = await resp.json();
     const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-    log('Brief Extractor', `✓ Done in ${elapsed}s`, 'success');
-    log('Brief Extractor', `Product: ${data.product}`, 'info');
-    log('Brief Extractor', `Season: ${data.season}`, 'info');
-    log('Brief Extractor', `Brand: ${data.brand || '—'}`, 'dim');
-    log('Brief Extractor', `Key messages: ${(data.key_messages || []).length} found`, 'info');
 
     // Fill form
     setField('f-product', data.product);
@@ -1459,7 +1437,6 @@ async function extractBrief() {
     setStep('brief', 'done');
     toast('Brief extracted — review and generate.', 'success');
   } catch (err) {
-    log('Brief Extractor', `✗ Error: ${err.message}`, 'error');
     setStep('brief', '');
     toast(`Extraction failed: ${err.message}`, 'error');
   } finally {
@@ -1483,7 +1460,6 @@ function closeWfDialog(e) {
 async function loadWorkfrontBriefings() {
   const list = document.getElementById('wf-list');
   list.innerHTML = `<div class="wf-loading">Loading…</div>`;
-  log('Workfront', '▶ Fetching ready briefings (mock)', 'header');
 
   try {
     const resp = await fetch(`${API_BASE}/workfront/ready_briefings?limit=10`);
@@ -1493,8 +1469,6 @@ async function loadWorkfrontBriefings() {
     }
     const data = await resp.json();
     const briefings = data.briefings || [];
-
-    log('Workfront', `✓ ${briefings.length} briefing(s) in Ready status`, 'success');
 
     if (!briefings.length) {
       list.innerHTML = `<div class="wf-empty">No briefings currently in Ready status.</div>`;
@@ -1517,7 +1491,6 @@ async function loadWorkfrontBriefings() {
 
     window._wfBriefings = briefings;
   } catch (err) {
-    log('Workfront', `✗ Error: ${err.message}`, 'error');
     list.innerHTML = `<div class="wf-empty">Failed to load briefings: ${escHtml(err.message)}</div>`;
   }
 }
@@ -1537,8 +1510,7 @@ function selectWorkfrontBriefing(idx) {
   setField('f-campaign', p.campaign_name || '');
   setField('f-messages', (p.key_messages || []).join('\n'));
 
-  log('Workfront', `Loaded briefing from task ${item.workfront_task_id} — ${p.product}`, 'success');
-  toast('Briefing loaded from Workfront (mock).', 'success');
+  toast('Briefing loaded from Workfront.', 'success');
   closeWfDialog();
 }
 
@@ -1563,12 +1535,13 @@ function savePalette() {
   renderPaletteStrip();
 }
 
+/* ── Palette editor ───────────────────────────────────────────────── */
 function openPaletteEditor() {
   renderPaletteEditList();
   document.getElementById('pal-dialog').classList.add('open');
 }
 function closePaletteEditor(e) {
-  if (!e || e.target.id === 'pal-dialog' || e.target.classList.contains('dialog-close') || e.target.classList.contains('btn-pal-done')) {
+  if (!e || e.target.id === 'pal-dialog' || e.target.classList.contains('btn-pal-done')) {
     document.getElementById('pal-dialog').classList.remove('open');
   }
 }
@@ -1602,7 +1575,6 @@ function updatePaletteField(index, field, value) {
     palette[index].name = value;
   }
   savePalette();
-  // Keep the row's own inputs in sync without a full re-render (avoids losing focus)
   const rows = document.querySelectorAll('#pal-edit-list .pal-edit-row');
   const row = rows[index];
   if (row && field === 'hex' && /^#[0-9a-fA-F]{6}$/.test(palette[index].hex)) {
@@ -1610,6 +1582,7 @@ function updatePaletteField(index, field, value) {
   }
 }
 
+/* ── Generation ───────────────────────────────────────────────────── */
 function addPaletteColor() {
   palette.push({ name: 'New color', hex: '#999999' });
   savePalette();
@@ -1629,7 +1602,6 @@ function resetPalette() {
   toast('Palette reset to default.', 'success');
 }
 
-
 async function generate() {
   if (isRunning) return;
 
@@ -1641,25 +1613,13 @@ async function generate() {
   showSkeleton();
   showProcessSteps();
 
-  log('─'.repeat(36), '', 'dim');
-  log('Coordinator', '▶ Campaign started', 'header');
-  log('Coordinator', `Product: ${briefing.product}`, 'info');
-  log('Coordinator', `Season: ${briefing.season}`, 'info');
-  log('Coordinator', `Audience: ${briefing.audience.substring(0, 60)}…`, 'dim');
-  log('Coordinator', `Brand: ${briefing.brand || '—'}`, 'dim');
-  log('Coordinator', '⇉ Generating copy first, then background image…', 'accent');
-
   setStep('brief', 'done');
   setStep('copy', 'running');
   setStep('visual', 'running');
   setStatus('running', 'Generating copy…');
 
-  const copyTimer = setTimeout(() => {
-    log('Copywriter', '▶ Copy generation in progress…', 'info');
-  }, 400);
-  const visualTimer = setTimeout(() => {
-    log('Visual Expert', '▶ Preparing background generation…', 'dim');
-  }, 800);
+  const copyTimer = setTimeout(() => {}, 400);
+  const visualTimer = setTimeout(() => {}, 800);
 
   const t0 = Date.now();
 
@@ -1677,7 +1637,6 @@ async function generate() {
     clearTimeout(visualTimer);
 
     if (currentResult?.copy) {
-      log('Visual Expert', `⚠ Image generation stopped: ${err.message}`, 'warn');
       setStep('visual', 'done');
       setStep('image', '');
       setStatus('idle', 'Copy ready — image failed');
@@ -1685,7 +1644,6 @@ async function generate() {
       return;
     }
 
-    log('Coordinator', `✗ Error: ${err.message}`, 'error');
     hideSkeleton();
     setStatus('idle', 'Error');
     toast(`Generation failed: ${err.message}`, 'error');
@@ -1706,13 +1664,12 @@ async function onCopyGenerationFinished(resp, copyTimer, visualTimer, t0, briefi
   const copyData = await resp.json();
   const elapsedCopy = ((Date.now() - t0) / 1000).toFixed(1);
 
-  log('Copywriter', `✓ Done in ${elapsedCopy}s`, 'success');
-  log('Copywriter', `Headline: ${copyData.copy?.headline}`, 'info');
-
   currentResult = {
     briefing,
     copy: copyData.copy,
     visual: {},
+    visual_versions: [], 
+    visual_index: 0,     
     status: copyData.status,
   };
   renderResult(currentResult, elapsedCopy);
@@ -1736,10 +1693,13 @@ async function onCopyGenerationFinished(resp, copyTimer, visualTimer, t0, briefi
   const visualData = await imgResp.json();
   const elapsedTotal = ((Date.now() - t0) / 1000).toFixed(1);
 
-  log('Visual Expert', `✓ Background generated`, 'success');
-  log('Visual Expert', `Model: ${visualData.visual?.generation_model || '—'}`, 'info');
-
   currentResult.visual = visualData.visual;
+  
+  if (visualData.visual) {
+    currentResult.visual_versions.push({ ...visualData.visual });
+    currentResult.visual_index = 0;
+  }
+  
   currentResult.status = visualData.status;
   renderResult(currentResult, elapsedTotal);
 
@@ -1791,16 +1751,17 @@ function clearForm() {
 /* ── Render results ───────────────────────────────────────────────── */
 function renderResult(data, elapsed) {
   const copy   = data.copy   || {};
-  const visual = data.visual || {};
+  const visual = (data.visual_versions && data.visual_versions.length > 0) 
+                 ? data.visual_versions[data.visual_index] 
+                 : (data.visual || {});
 
   document.getElementById('empty-state').style.display    = 'none';
-  document.getElementById('skeleton').style.display       = 'none';
+  document.getElementById('skeleton').style.display        = 'none';
   document.getElementById('result-wrap').style.display    = 'block';
 
   document.getElementById('canvas-meta').textContent =
     `${data.briefing?.product || ''} · ${data.briefing?.season || ''} · ${elapsed}s`;
 
-  // Mappatura nuovi campi dal System Prompt
   const topLabelEl  = document.getElementById('result-top-label');
   const headlineEl  = document.getElementById('result-headline');
   const subheadlineEl = document.getElementById('result-subheadline');
@@ -1810,7 +1771,6 @@ function renderResult(data, elapsed) {
   headlineEl.textContent  = copy.headline || '—';
   subheadlineEl.textContent = copy.subheadline || '—';
 
-  // Gestione Trust Badges (Array)
   badgesEl.innerHTML = '';
   if (copy.trust_badges && Array.isArray(copy.trust_badges)) {
     copy.trust_badges.forEach(badge => {
@@ -1828,7 +1788,6 @@ function renderResult(data, elapsed) {
     el.classList.add('editable');
   });
 
-  // Image Layout Rendering
   const img = document.getElementById('result-img');
   const placeholder = document.getElementById('img-placeholder');
   const placeholderText = document.getElementById('img-placeholder-text');
@@ -1842,7 +1801,7 @@ function renderResult(data, elapsed) {
   } else {
     img.style.display = 'none';
     placeholder.style.display = 'flex';
-    const waiting = data.status === 'copy_generated';
+    const waiting = data.status === 'copy_generated' || data.status === 'regenerating_image';
     placeholder.classList.toggle('loading', waiting);
     placeholderText.textContent = waiting
       ? 'Waiting for image generation…'
@@ -1859,11 +1818,31 @@ function renderResult(data, elapsed) {
   }
 
   document.getElementById('result-model').textContent = visual.generation_model || '—';
+
+  const navContainer = document.getElementById('image-version-nav');
+  if (data.visual_versions && data.visual_versions.length > 1) {
+    navContainer.style.display = 'flex';
+    document.getElementById('version-counter').textContent = `${data.visual_index + 1} / ${data.visual_versions.length}`;
+    document.getElementById('btn-version-prev').disabled = (data.visual_index === 0);
+    document.getElementById('btn-version-next').disabled = (data.visual_index === data.visual_versions.length - 1);
+  } else {
+    navContainer.style.display = 'none';
+  }
 }
 
-/* ── Copy full text (with clipboard fallback for restricted contexts) ─ */
+/* ── Navigazione delle versioni salvate ────────────────────────────── */
+function navigateVersion(direction) {
+  if (!currentResult || !currentResult.visual_versions) return;
+  
+  let newIndex = currentResult.visual_index + direction;
+  if (newIndex >= 0 && newIndex < currentResult.visual_versions.length) {
+    currentResult.visual_index = newIndex;
+    renderResult(currentResult, "0");
+  }
+}
+
+/* ── Copy full text ───────────────────────────────────────────────── */
 async function copyCampaignCopy() {
-  // Funzione di utility per ripulire il testo dai fallback di default della UI
   const cleanText = (id) => {
     const txt = document.getElementById(id)?.textContent?.trim() || '';
     return txt === '—' ? '' : txt;
@@ -1873,7 +1852,6 @@ async function copyCampaignCopy() {
   const headline    = cleanText('result-headline');
   const subheadline = cleanText('result-subheadline');
 
-  // Estrai i singoli testi dei trust badges dall'array dinamico
   const badgesEls = document.querySelectorAll('#result-badges .badge-item');
   let badges = [];
   badgesEls.forEach(b => {
@@ -1882,7 +1860,6 @@ async function copyCampaignCopy() {
   });
   const trustText = badges.length ? `[${badges.join(' | ')}]` : '';
 
-  // Compone il copy finale saltando le righe vuote
   const components = [topLabel, headline, subheadline, trustText].filter(Boolean);
   const fullCopy = components.join('\n\n').trim();
 
@@ -1900,28 +1877,17 @@ async function copyCampaignCopy() {
   }
 }
 
-/**
- * Tries the modern async Clipboard API first (works in normal https/localhost tabs),
- * then falls back to the legacy execCommand('copy') approach via a hidden textarea.
- * The fallback is what makes this work inside sandboxed iframes/webviews (e.g. embedded
- * previews) where navigator.clipboard is blocked or missing entirely.
- */
 async function copyTextToClipboard(text) {
-  // Attempt 1: modern Clipboard API
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(text);
       return true;
     }
-  } catch (err) {
-    // fall through to legacy approach
-  }
+  } catch (err) {}
 
-  // Attempt 2: legacy execCommand fallback
   try {
     const textarea = document.createElement('textarea');
     textarea.value = text;
-    // Keep it in the viewport (off-screen but not display:none) so execCommand can select it
     textarea.style.position = 'fixed';
     textarea.style.top = '0';
     textarea.style.left = '0';
@@ -1946,10 +1912,6 @@ async function copyTextToClipboard(text) {
   }
 }
 
-/**
- * Last-resort UX: if even execCommand fails (fully sandboxed environments),
- * show the text selected in a visible textarea so the user can copy it manually.
- */
 function selectTextInHiddenArea(text) {
   let box = document.getElementById('manual-copy-box');
   if (!box) {
@@ -1990,7 +1952,6 @@ function hideSkeleton() {
 }
 function showProcessSteps() {
   document.getElementById('process-steps').style.display = 'flex';
-  // reset steps
   ['brief','copy','visual','image'].forEach(s => setStep(s, ''));
 }
 
@@ -2015,53 +1976,115 @@ function setStatus(state, label) {
   document.getElementById('status-label').textContent = label;
 }
 
-/* ── Log stream ───────────────────────────────────────────────────── */
-function log(agent, msg, type = 'info') {
-  const stream = document.getElementById('log-stream');
-  const now = new Date();
-  const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-
-  if (!msg) {
-    const sep = document.createElement('div');
-    sep.className = 'log-separator';
-    stream.appendChild(sep);
-    stream.scrollTop = stream.scrollHeight;
-    return;
-  }
-
-  const entry = document.createElement('div');
-  entry.className = 'log-entry';
-
-  const label = agent ? `[${agent}]` : '';
-  const fullMsg = label ? `${label} ${msg}` : msg;
-
-  entry.innerHTML = `
-    <span class="log-time">${time}</span>
-    <span class="log-msg ${type}">${escHtml(fullMsg)}</span>
-  `;
-  stream.appendChild(entry);
-  stream.scrollTop = stream.scrollHeight;
-}
-
-function clearLog() {
-  document.getElementById('log-stream').innerHTML = '';
-  log('System', 'Log cleared', 'dim');
-}
-
 function escHtml(s) {
+  if (!s) return '';
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 /* ── Prompt dialog ────────────────────────────────────────────────── */
 function viewPrompt() {
-  const prompt = currentResult?.visual?.image_prompt;
+  const currentVisual = (currentResult?.visual_versions && currentResult.visual_versions.length > 0)
+                        ? currentResult.visual_versions[currentResult.visual_index]
+                        : currentResult?.visual;
+                        
+  const prompt = currentVisual?.image_prompt;
   if (!prompt) { toast('No prompt available.', 'error'); return; }
 
+  originalPromptText = prompt;
+
   document.getElementById('prompt-dialog-body').innerHTML = `
-    <pre class="prompt-text">${escHtml(prompt)}</pre>
+    <textarea class="prompt-textarea" id="editable-prompt-text" oninput="checkPromptModification()">${escHtml(prompt)}</textarea>
   `;
+  
+  document.getElementById('btn-prompt-regenerate').disabled = true;
   document.getElementById('prompt-dialog').classList.add('open');
 }
+
+function checkPromptModification() {
+  const currentText = document.getElementById('editable-prompt-text').value;
+  const regenerateBtn = document.getElementById('btn-prompt-regenerate');
+  
+  if (currentText !== originalPromptText && currentText.trim() !== "") {
+    regenerateBtn.disabled = false;
+  } else {
+    regenerateBtn.disabled = true;
+  }
+}
+
+// CORRETTA: Forza l'invio esplicito del prompt personalizzato per bypassare la riscrittura del visual_expert
+async function regenerateImageFromPrompt() {
+  if (!currentResult || isRunning) return;
+  
+  const newPrompt = document.getElementById('editable-prompt-text').value.trim();
+  const regenerateBtn = document.getElementById('btn-prompt-regenerate');
+  
+  setRunning(true);
+  regenerateBtn.disabled = true;
+  document.getElementById('prompt-dialog').classList.remove('open');
+  
+  const img = document.getElementById('result-img');
+  const placeholder = document.getElementById('img-placeholder');
+  const placeholderText = document.getElementById('img-placeholder-text');
+  
+  img.style.display = 'none';
+  placeholder.style.display = 'flex';
+  placeholder.classList.add('loading');
+  placeholderText.textContent = 'Regenerating background from custom prompt…';
+  
+  setStep('image', 'running');
+  setStatus('running', 'Regenerating image…');
+  
+  const t0 = Date.now();
+  
+  try {
+    // MODIFICA: Inviamo i flag di skip e il custom prompt richiesti dallo schema Pydantic
+    const payload = {
+      ...currentResult.briefing,
+      skip_visual_expert: true,
+      image_prompt: newPrompt 
+    };
+    
+    const imgResp = await fetch(`${API_BASE}/campaign/generate_background`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!imgResp.ok) {
+      const err = await imgResp.json().catch(() => ({ detail: imgResp.statusText }));
+      throw new Error(err.detail || imgResp.statusText);
+    }
+
+    const visualData = await imgResp.json();
+    const elapsedTotal = ((Date.now() - t0) / 1000).toFixed(1);
+
+    // Mantiene l'impostazione del prompt corrente associata alla nuova versione generata
+    const newVisualVersion = {
+      image_base64: visualData.visual?.image_base64,
+      generation_model: visualData.visual?.generation_model || currentResult.visual?.generation_model,
+      image_prompt: newPrompt 
+    };
+
+    currentResult.visual_versions.push(newVisualVersion);
+    currentResult.visual_index = currentResult.visual_versions.length - 1;
+    currentResult.status = visualData.status;
+    
+    renderResult(currentResult, elapsedTotal);
+    
+    setStep('visual', 'done');
+    setStep('image', 'done');
+    setStatus('idle', 'Done');
+    toast('New image version generated successfully.', 'success');
+  } catch (err) {
+    setStep('image', '');
+    setStatus('idle', 'Image update failed');
+    renderResult(currentResult, "0"); 
+    toast(`Regeneration failed: ${err.message}`, 'error');
+  } finally {
+    setRunning(false);
+  }
+}
+
 function closeDialog(e) {
   if (!e || e.target.id === 'prompt-dialog' || e.target.classList.contains('dialog-close')) {
     document.getElementById('prompt-dialog').classList.remove('open');
@@ -2070,13 +2093,15 @@ function closeDialog(e) {
 
 /* ── Download ─────────────────────────────────────────────────────── */
 function downloadImage() {
-  const b64 = currentResult?.visual?.image_base64;
+  const visual = (currentResult?.visual_versions && currentResult.visual_versions.length > 0)
+                 ? currentResult.visual_versions[currentResult.visual_index]
+                 : currentResult?.visual;
+  const b64 = visual?.image_base64;
   if (!b64) { toast('No image to download.', 'error'); return; }
   const a = document.createElement('a');
   a.href = `data:image/png;base64,${b64}`;
-  a.download = `fullforce_bg_${Date.now()}.png`;
+  a.download = `fullforce_bg_v${currentResult.visual_index + 1}_${Date.now()}.png`;
   a.click();
-  log('System', 'Image downloaded', 'success');
 }
 
 /* ── History ──────────────────────────────────────────────────────── */
@@ -2091,7 +2116,7 @@ function saveToHistory(data) {
     image_b64: data.visual?.image_base64,
     status: data.status,
   });
-  history = history.slice(0, 30); // keep last 30
+  history = history.slice(0, 30);
   localStorage.setItem('ff_history', JSON.stringify(history));
   renderHistory();
 }

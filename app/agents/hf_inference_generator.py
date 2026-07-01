@@ -120,6 +120,7 @@ async def generate_image_hf_inference(prompt: str) -> dict:
 
     logger.info(" [HF INFERENCE] ▶ Model: '%s' | %dx%d", model, settings.image_width, settings.image_height)
     logger.info(" [HF INFERENCE] Prompt length: %d chars", len(prompt))
+    logger.info(" [HF INFERENCE] Prompt: '%s'", prompt)
 
     max_retries = 2
     for attempt in range(1, max_retries + 1):

@@ -196,64 +196,77 @@ async def visual_expert_node(state: CampaignState) -> CampaignState:
     briefing = state["briefing"]
     t0 = time.perf_counter()
 
-    logger.info(" [VISUAL EXPERT] ▶ Starting — product: '%s' | vision model: %s",
-                briefing.product, settings.ollama_vision_model)
-    logger.info(" [VISUAL EXPERT]   Season: %s | Tone: %s",
-                briefing.season, (briefing.tone_of_voice or "—")[:60])
+    # ── CONTROLLO SKIP VISUAL EXPERT (REGENERATE CON PROMPT CUSTOM) ────
+    # Verifica sia il flag booleano sia la presenza fisica del prompt modificato
+    if getattr(briefing, "skip_visual_expert", False) and getattr(briefing, "image_prompt", None):
+        logger.info(" [VISUAL EXPERT] ⏭ SKIPPING VISUAL EXPERT LLM — Using custom prompt directly.")
+        image_prompt = briefing.image_prompt
+        elapsed_prompt = 0.0
+    else:
+        # Flusso Standard: Interpella l'LLM per ottimizzare il prompt
+        logger.info(" [VISUAL EXPERT] ▶ Starting — product: '%s' | vision model: %s",
+                    briefing.product, settings.ollama_vision_model)
+        logger.info(" [VISUAL EXPERT]   Season: %s | Tone: %s",
+                    briefing.season, (briefing.tone_of_voice or "—")[:60])
 
-    llm = ChatOllama(
-        base_url=settings.ollama_base_url,
-        model=settings.ollama_vision_model,
-        temperature=0.6,
-        format="json",
-        keep_alive=-1,
-    )
+        llm = ChatOllama(
+            base_url=settings.ollama_base_url,
+            model=settings.ollama_vision_model,
+            temperature=0.6,
+            format="json",
+            keep_alive=-1,
+        )
 
-    palette_context = build_palette_context(briefing)
+        palette_context = build_palette_context(briefing)
 
-    # UPDATED: Enforced strict white light parameters inside the structural skeleton
-    user_prompt = f"""Generate a FLUX image prompt for an artistic, abstract, completely empty studio backdrop.
-The aesthetic target is: painterly tonal fields, soft gradient wash, subtle texture (canvas or brushed plaster), gentle directional light suggestion, low defined floor/horizon or hard floor seam, pack-shot ready, zero objects.
+        user_prompt = f"""Generate a FLUX image prompt for an artistic, abstract, completely empty studio backdrop.
+    The aesthetic target is: painterly tonal fields, soft gradient wash, subtle texture (canvas or brushed plaster), gentle directional light suggestion, low defined floor/horizon or hard floor seam, pack-shot ready, zero objects.
 
-{palette_context}
+    {palette_context}
 
-CAMPAIGN BRIEFING:
-- Product: {briefing.product}
-- Season: {briefing.season}
-- Audience: {briefing.audience}
-- Goal: {briefing.goal}
-- Tone of voice: {briefing.tone_of_voice}
-- Brand: {briefing.brand or "N/A"}
-- Campaign name: {briefing.campaign_name or "N/A"}
-- Key messages: {", ".join(briefing.key_messages) if briefing.key_messages else "N/A"}
+    CAMPAIGN BRIEFING:
+    - Product: {briefing.product}
+    - Season: {briefing.season}
+    - Audience: {briefing.audience}
+    - Goal: {briefing.goal}
+    - Tone of voice: {briefing.tone_of_voice}
+    - Brand: {briefing.brand or "N/A"}
+    - Campaign name: {briefing.campaign_name or "N/A"}
+    - Key messages: {", ".join(briefing.key_messages) if briefing.key_messages else "N/A"}
 
-PROMPT STRUCTURE — comma-separated, 50-90 words, no sentences:
-"Infinity cove studio, seamless [MATERIAL] wall, [DOMINANT COLOR + HEX] wall tone, [SECONDARY COLOR + HEX] deep shadow zone, diagonal neutral white studio raking light upper-[LEFT/RIGHT], feathered penumbra, bright lit wall panel upper-[SIDE], deep shadow lower-[SIDE], floor [FLOOR COLOR + HEX] lighter tone, tonal gradient falloff, zero yellow cast, [TEXTURE] matte texture, ultra-matte finish, zero specular, zero reflections, no windows visible, ambient occlusion corner curve, cyclorama, completely empty, no objects, no props, no decorations, 4K"
+    PROMPT STRUCTURE — comma-separated, 50-90 words, no sentences:
+    "Infinity cove studio, seamless [MATERIAL] wall, [DOMINANT COLOR + HEX] wall tone, [SECONDARY COLOR + HEX] deep shadow zone, diagonal neutral white studio raking light upper-[LEFT/RIGHT], feathered penumbra, bright lit wall panel upper-[SIDE], deep shadow lower-[SIDE], floor [FLOOR COLOR + HEX] lighter tone, tonal gradient falloff, zero yellow cast, [TEXTURE] matte texture, ultra-matte finish, zero specular, zero reflections, no windows visible, ambient occlusion corner curve, cyclorama, completely empty, no objects, no props, no decorations, 4K"
 
-WORD COUNT TARGET: 50-90 words. Stop at 90. Do not exceed.
+    WORD COUNT TARGET: 50-90 words. Stop at 90. Do not exceed.
 
-Adapt material (limewash plaster / microcement / fine stucco / tadelakt), colors, light direction, and angle to best match the campaign mood and season. Colors MUST follow the SEASON RULE above — do not default to light/pastel tones for a winter or autumn brief, and do not default to dark/deep tones for a spring or summer brief.
+    Adapt material (limewash plaster / microcement / fine stucco / tadelakt), colors, light direction, and angle to best match the campaign mood and season. Colors MUST follow the SEASON RULE above — do not default to light/pastel tones for a winter or autumn brief, and do not default to dark/deep tones for a spring or summer brief.
 
-{REFERENCE_PROMPT_EXAMPLE}
+    {REFERENCE_PROMPT_EXAMPLE}
 
-FORBIDDEN WORDS — never use: product, placement, compositing, backdrop for, surface for, podium, pedestal, riser, platform, shelf, object, vase, bottle, jar, plant, flower, foliage, furniture, decoration, table, chair, person, hand, text, logo"""
+    FORBIDDEN WORDS — never use: product, placement, compositing, backdrop for, surface for, podium, pedestal, riser, platform, shelf, object, vase, bottle, jar, plant, flower, foliage, furniture, decoration, table, chair, person, hand, text, logo"""
 
+        try:
+            logger.info(" [VISUAL EXPERT] Step 1/2 — Building FLUX prompt via %s…",
+                        settings.ollama_vision_model)
+            t_prompt = time.perf_counter()
+
+            response = await llm.ainvoke([
+                SystemMessage(content=VISUAL_EXPERT_SYSTEM_PROMPT),
+                HumanMessage(content=user_prompt),
+            ])
+
+            elapsed_prompt = time.perf_counter() - t_prompt
+            data = json.loads(response.content)
+            image_prompt = data.get("image_prompt", "")
+        except Exception as e:
+            elapsed = time.perf_counter() - t0
+            logger.error(" [VISUAL EXPERT] ✗ Failed after %.1fs — %s", elapsed, e)
+            errors = state.get("errors", [])
+            return {**state, "errors": errors + [f"visual_expert_error: {e}"]}
+
+    # ── STEP 2/2: GENERAZIONE IMMAGINE (Eseguito sempre, sia in skip che in standard) ────
     try:
-        logger.info(" [VISUAL EXPERT] Step 1/2 — Building FLUX prompt via %s…",
-                    settings.ollama_vision_model)
-        t_prompt = time.perf_counter()
-
-        response = await llm.ainvoke([
-            SystemMessage(content=VISUAL_EXPERT_SYSTEM_PROMPT),
-            HumanMessage(content=user_prompt),
-        ])
-
-        elapsed_prompt = time.perf_counter() - t_prompt
-        data = json.loads(response.content)
-        image_prompt = data.get("image_prompt", "")
-
-        logger.info(" [VISUAL EXPERT]   Prompt ready in %.1fs (%d chars)",
-                    elapsed_prompt, len(image_prompt))
+        logger.info(" [VISUAL EXPERT]   Prompt ready (%d chars)", len(image_prompt))
         logger.info(" [VISUAL EXPERT]   Prompt preview: %s…", image_prompt[:120])
 
         logger.info(" [VISUAL EXPERT] Step 2/2 — Generating image via backend '%s'…",
