@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     image_width: int = Field(1024, env="IMAGE_WIDTH")
     image_height: int = Field(768, env="IMAGE_HEIGHT")
 
+    # Azure Blob Storage for assembled assets
+    azure_storage_connection_string: Optional[str] = Field(None, env="AZURE_STORAGE_CONNECTION_STRING")
+    azure_storage_container_name: str = Field("generatedfiles", env="AZURE_STORAGE_CONTAINER_NAME")
+
     # App
     app_host: str = Field("0.0.0.0", env="APP_HOST")
     app_port: int = Field(8000, env="APP_PORT")

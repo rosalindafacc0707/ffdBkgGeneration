@@ -344,36 +344,6 @@
     .btn-generate:hover:not(:disabled) { background: var(--champagne); }
     .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* Stile per il pulsante Content Assembly */
-    .btn-assembly {
-      width: 100%;
-      padding: 10px;
-      background: var(--emerald);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--text);
-      font-family: var(--sans);
-      font-weight: 500;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-    .btn-assembly:hover:not(:disabled) {
-      background: #24493e;
-      border-color: var(--border-hi);
-    }
-    .btn-assembly:disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-      background: transparent;
-      color: var(--text-muted);
-      border-color: var(--border);
-    }
-
     /* ── CENTER — Output canvas ─────────────────────────────────── */
     .center-panel {
       display: flex;
@@ -449,6 +419,49 @@
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    }
+
+    /* Layout d'impatto per il pulsante Content Assembly nel flusso centrale */
+    .assembly-action-container {
+      width: 100%;
+      max-width: 640px;
+      margin-top: -8px;
+      display: flex;
+      justify-content: center;
+    }
+    .btn-assembly {
+      width: 100%;
+      padding: 12px;
+      background: var(--emerald);
+      border: 1px solid rgba(92,158,127,0.2);
+      border-radius: var(--radius-lg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-weight: 500;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(28,57,52,0.2);
+    }
+    .btn-assembly:hover:not(:disabled) {
+      background: #23473e;
+      border-color: var(--success);
+      box-shadow: 0 6px 16px rgba(28,57,52,0.4);
+      transform: translateY(-1px);
+    }
+    .btn-assembly:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+      background: var(--panel-hi);
+      color: var(--text-muted);
+      border-color: var(--border);
+      box-shadow: none;
+      transform: none;
     }
 
     .image-nav-container {
@@ -1041,6 +1054,56 @@
     .step-dot.running { border-color: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
     .step-label { font-size: 10px; color: var(--text-muted); text-align: center; }
     .step.active .step-label, .step.done .step-label { color: var(--text-dim); }
+
+    /* ── AGGIUNTI: Stili per il Big Temporary Blurred Layer Overlay ── */
+    .overlay-blur-message {
+      position: fixed;
+      inset: 0;
+      background: rgba(19, 19, 21, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    .overlay-blur-message.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .overlay-message-content {
+      background: var(--panel);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-lg);
+      padding: 40px 60px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      max-width: 90vw;
+      width: 480px;
+      transform: scale(0.95);
+      transition: transform 0.4s ease;
+    }
+    .overlay-blur-message.open .overlay-message-content {
+      transform: scale(1);
+    }
+    .overlay-message-title {
+      font-size: 24px;
+      font-weight: 500;
+      color: var(--success);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .overlay-message-text {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.6;
+    }
   </style>
 </head>
 <body>
@@ -1185,9 +1248,6 @@
       <button class="btn-generate" id="btn-generate" onclick="generate()">
         Generate campaign →
       </button>
-      <button class="btn-assembly" id="btn-assembly" onclick="goToContentAssembly()" disabled>
-        📦 Go to content assembly
-      </button>
     </div>
   </aside>
 
@@ -1226,6 +1286,12 @@
           <div class="step-dot" id="step-image-dot">4</div>
           <div class="step-label">Image Gen</div>
         </div>
+      </div>
+
+      <div class="assembly-action-container" id="assembly-container" style="display:none;">
+        <button class="btn-assembly" id="btn-assembly" onclick="goToContentAssembly()" disabled>
+          📦 Go to content assembly
+        </button>
       </div>
 
       <div id="skeleton" style="display:none; width:100%; max-width:640px;">
@@ -1365,6 +1431,14 @@
         <button class="btn-pal-done" onclick="closePaletteEditor()">Done</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ── AGGIUNTO: Struttura dell'overlay temporaneo con sfondo sfocato per l'assembly completato ── -->
+<div class="overlay-blur-message" id="assembly-success-overlay">
+  <div class="overlay-message-content">
+    <div class="overlay-message-title">✓ Success</div>
+    <div class="overlay-message-text">Assets sent for the Content Assembly phase!</div>
   </div>
 </div>
 
@@ -1781,8 +1855,8 @@ function clearForm() {
   document.getElementById('pdf-filename').textContent = '';
   document.getElementById('btn-extract').disabled = true;
   document.getElementById('pdf-input').value = '';
-  if (document.getElementById('btn-assembly')) {
-    document.getElementById('btn-assembly').disabled = true;
+  if (document.getElementById('assembly-container')) {
+    document.getElementById('assembly-container').style.display = 'none';
   }
   resetPalette();
 }
@@ -1868,10 +1942,16 @@ function renderResult(data, elapsed) {
     navContainer.style.display = 'none';
   }
 
-  // MODIFICATA: Abilita il pulsante di assembly se abbiamo sia la copia che l'immagine base64 pronti
+  // Abilita il pulsante e mostra il contenitore di assembly se l'immagine è pronta
+  const assemblyContainer = document.getElementById('assembly-container');
   const assemblyBtn = document.getElementById('btn-assembly');
-  if (assemblyBtn) {
-    assemblyBtn.disabled = !data.copy || !visual.image_base64;
+  if (assemblyContainer && assemblyBtn) {
+    if (data.copy && visual.image_base64) {
+      assemblyContainer.style.display = 'flex';
+      assemblyBtn.disabled = false;
+    } else {
+      assemblyBtn.disabled = true;
+    }
   }
 }
 
@@ -1986,10 +2066,12 @@ function selectTextInHiddenArea(text) {
   setTimeout(() => { box.style.display = 'none'; }, 6000);
 }
 
+// Controllo visibilità scheletro e contenitore
 function showSkeleton() {
   document.getElementById('empty-state').style.display   = 'none';
   document.getElementById('skeleton').style.display      = 'block';
   document.getElementById('result-wrap').style.display   = 'none';
+  document.getElementById('assembly-container').style.display = 'none';
 }
 function hideSkeleton() {
   document.getElementById('skeleton').style.display     = 'none';
@@ -2029,7 +2111,7 @@ function setStatus(state, label) {
   document.getElementById('status-label').textContent = label;
 }
 
-// MODIFICATA: Funzione globale asincrona per il caricamento su OneDrive
+// MODIFICATA: Sostituito il vecchio toast.success con l'attivazione temporanea dell'overlay sfocato
 async function goToContentAssembly() {
   if (!currentResult || isRunning) return;
   
@@ -2038,12 +2120,10 @@ async function goToContentAssembly() {
   if (assemblyBtn) assemblyBtn.disabled = true;
   setStatus('running', 'Assembling content onto OneDrive…');
   
-  // Estrae i testi correntemente visualizzati (per catturare le modifiche effettuate a schermo)
   const currentTopLabel = document.getElementById('result-top-label')?.textContent?.trim();
   const currentHeadline = document.getElementById('result-headline')?.textContent?.trim();
   const currentSubheadline = document.getElementById('result-subheadline')?.textContent?.trim();
   
-  // Estrae l'esatta versione dell'immagine attiva selezionata con le frecce
   const activeVisual = (currentResult.visual_versions && currentResult.visual_versions.length > 0)
                        ? currentResult.visual_versions[currentResult.visual_index]
                        : currentResult.visual;
@@ -2070,9 +2150,18 @@ async function goToContentAssembly() {
     }
     
     await resp.json();
-    toast('Assets exported to OneDrive folder (ffd_prototype_images)!', 'success');
+    
+    // Mostra l'overlay sfocato a tutto schermo anziché il popup nell'angolo
+    const successOverlay = document.getElementById('assembly-success-overlay');
+    if (successOverlay) {
+      successOverlay.classList.add('open');
+      setTimeout(() => {
+        successOverlay.classList.remove('open');
+      }, 3500); // Rimane visibile temporaneamente per 3.5 secondi
+    }
+    
   } catch (err) {
-    toast(`Assembly export failed: ${err.message}`, 'error');
+    toast(`Assembly send failed: ${err.message}`, 'error');
   } finally {
     setRunning(false);
     setStatus('idle', 'Ready');

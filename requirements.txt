@@ -15,3 +15,4 @@ pytest>=8.3.0
 pymupdf>=1.24.0
 python-multipart
 python-docx
+azure-storage-blob

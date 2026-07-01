@@ -3,7 +3,6 @@ FastAPI Routes — Campaign API
 """
 import logging
 import base64
-import os
 import time
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
@@ -17,6 +16,7 @@ from app.core.config import settings
 from app.agents.coordinator import run_campaign, run_copy, run_visual
 from app.agents.brief_extractor import run_generate_brief_json
 from app.mcp.workfront_mock import get_ready_briefings
+from app.utils.azure_storage import upload_bytes_to_azure_blob
 
 
 # Utils for the service of brief json extraction ---------
@@ -199,32 +199,26 @@ async def get_ready_briefings_mock(limit: int = 5, project_id: str | None = None
 @router.post(
     "/campaign/assemble_content",
     response_model=AssemblyOutput,
-    summary="Upload assets to OneDrive assembly folder",
-    description="Salva la copia generata in formato .docx e l'immagine corrente in formato .png nella cartella OneDrive ffd_prototype_images.",
+    summary="Upload assets to Azure Blob Storage",
+    description="Salva la copia generata in formato .docx e l'immagine corrente in formato .png in Azure Blob Storage.",
 )
 async def assemble_content(payload: ContentAssemblyInput):
-    # Costruiamo il percorso verso la cartella OneDrive basandoci sulla configurazione esistente
-    base_onedrive = os.path.dirname(settings.onedrive_images_dir)
-    assembly_dir = Path(base_onedrive) / "ffd_prototype_images"
-    assembly_dir.mkdir(parents=True, exist_ok=True)
-    
     timestamp = int(time.time())
     product_slug = (payload.product or "product").lower().replace(" ", "_")[:20]
-    
+
     saved_files = []
-    
+
     # 1. SALVATAGGIO IMMAGINE .PNG
     if payload.image_base64:
         try:
             img_data = base64.b64decode(payload.image_base64)
-            img_path = assembly_dir / f"bg_{product_slug}_{timestamp}.png"
-            with open(img_path, "wb") as f:
-                f.write(img_data)
-            saved_files.append(str(img_path))
-            logger.info(f" [ASSEMBLY] Immagine salvata su OneDrive: {img_path}")
+            blob_name = f"images/bg_{product_slug}_{timestamp}.png"
+            image_url = upload_bytes_to_azure_blob(img_data, blob_name, content_type="image/png")
+            saved_files.append(image_url)
+            logger.info(" [ASSEMBLY] Immagine caricata su Azure Blob: %s", image_url)
         except Exception as e:
-            logger.error(f" [ASSEMBLY] Errore salvataggio immagine: {e}")
-            raise HTTPException(status_code=500, detail=f"Errore scrittura PNG: {e}")
+            logger.error(" [ASSEMBLY] Errore salvataggio immagine: %s", e)
+            raise HTTPException(status_code=500, detail=f"Errore caricamento PNG su Azure: {e}")
 
     # 2. SALVATAGGIO COPY .DOCX IN STRUTTURA PROFESSIONALE
     try:
@@ -330,14 +324,17 @@ async def assemble_content(payload: ContentAssemblyInput):
           r_prompt.font.color.rgb = COLOR_PRIMARY
           p_prompt.paragraph_format.space_after = Pt(12)
 
-        doc_path = assembly_dir / f"copy_{product_slug}_{timestamp}.docx"
-        doc.save(str(doc_path))
-        saved_files.append(str(doc_path))
-        logger.info(f" [ASSEMBLY] Documento DOCX salvato su OneDrive: {doc_path}")
-        
+        doc_bytes = BytesIO()
+        doc.save(doc_bytes)
+        doc_bytes.seek(0)
+        doc_blob_name = f"documents/copy_{product_slug}_{timestamp}.docx"
+        doc_url = upload_bytes_to_azure_blob(doc_bytes.getvalue(), doc_blob_name, content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        saved_files.append(doc_url)
+        logger.info(" [ASSEMBLY] Documento DOCX caricato su Azure Blob: %s", doc_url)
+
     except Exception as e:
-        logger.error(f" [ASSEMBLY] Errore salvataggio documento DOCX: {e}")
-        raise HTTPException(status_code=500, detail=f"Errore scrittura DOCX: {e}")
+        logger.error(" [ASSEMBLY] Errore salvataggio documento DOCX: %s", e)
+        raise HTTPException(status_code=500, detail=f"Errore caricamento DOCX su Azure: {e}")
         
     return {
         "status": "success",
