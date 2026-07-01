@@ -1,34 +1,41 @@
-# FullForce Assets Generator 4 Campaigns
+# FullForce Ad Generator
 
-FullForce Assets Generator 4 Campaigns is a complete FastAPI + LangGraph application for turning campaign briefs into advertising copy and background visuals. It supports PDF brief extraction, copy generation, visual prompt generation, image generation, a browser-based frontend, and an MCP endpoint layer for external automation and AI tools.
+FullForce Ad Generator is a FastAPI-based campaign asset workflow that turns a campaign brief into polished marketing copy, a visual prompt, and a generated background image. It also includes a lightweight browser UI, an MCP interface for automation, and an assembly step that uploads the final image and DOCX copy to Azure Blob Storage.
 
-## What this project does
+## What this repository contains
 
-The system takes a campaign brief, extracts structured information from a PDF, generates marketing copy, creates a visual prompt for the Visual Expert, and sends that prompt to an image backend to produce a background image. The result can then be reviewed in a simple UI or consumed via REST or MCP endpoints.
+This project combines:
 
-### Core capabilities
+- a FastAPI API for campaign generation and asset assembly
+- a LangGraph-style orchestration layer for multi-agent copy and visual generation
+- a browser-based frontend for manual review and interaction
+- an MCP server for tool-based automation and external integrations
+- Azure Blob Storage support for publishing final assets
 
-- Extract structured campaign JSON from a PDF briefing
-- Generate top_label, headline, subheadline, and trust_badges copy
-- Build a prompt for FLUX-style image generation from the briefing and palette
-- Generate background images through Pollinations, Hugging Face Inference, Ollama, or OneDrive-based selection
-- Provide a browser UI for form input, palette editing, image generation, and prompt inspection
-- Expose REST endpoints and MCP tools for automation and external clients
+The core flow is:
 
-## Architecture at a glance
+1. ingest a campaign brief (PDF or structured JSON)
+2. extract structured briefing insights
+3. generate copy and a visual prompt
+4. produce a background image with an image backend
+5. assemble the final content into a DOCX document and upload both assets to Azure Blob Storage
 
-The repository is organized around a FastAPI app, a LangGraph agent workflow, and several backend modules.
+## Current capabilities
 
-- API layer: [app/api/routes.py](app/api/routes.py)
-- Agent orchestration: [app/agents/coordinator.py](app/agents/coordinator.py)
-- Brief extraction: [app/agents/brief_extractor.py](app/agents/brief_extractor.py)
-- Copy generation: [app/agents/copywriter.py](app/agents/copywriter.py)
-- Visual prompt generation: [app/agents/visual_expert.py](app/agents/visual_expert.py)
-- Image backend router: [app/agents/image_generator.py](app/agents/image_generator.py)
-- Frontend UI: [frontend/index.html](frontend/index.html)
-- MCP server: [app/mcp/server.py](app/mcp/server.py)
+- parse PDF briefing files and extract structured campaign JSON
+- generate campaign copy with fields such as top label, headline, subheadline, and trust badges
+- build visual prompts for background-image generation
+- route image generation through multiple backends:
+  - Pollinations
+  - Ollama
+  - Hugging Face Inference
+  - OneDrive-based image selection
+- expose a simple frontend for generation and review
+- provide REST endpoints for full campaign generation, copy-only generation, visual-only generation, and asset assembly
+- expose an MCP layer for tool-based external integrations
+- upload generated assets to Azure Blob Storage for downstream use
 
-## Project structure
+## Repository structure
 
 ```text
 app/
@@ -51,18 +58,53 @@ app/
     server.py
     tools.py
     workfront_mock.py
+  utils/
+    azure_storage.py
 frontend/
   index.html
+input/
+  briefings/
+output/
+  images/
+tests/
+  test_campaign.py
+  test_mcp_server.py
+  test_visual_expert.py
+  test_azure_storage.py
 main.py
 requirements.txt
-tests/
 ```
 
-## Requirements
+## Architecture overview
 
-Python 3.11+ is recommended.
+The application is organized around four main layers:
 
-Install dependencies:
+- API layer: [app/api/routes.py](app/api/routes.py)
+  - exposes the REST endpoints used by the UI and external clients
+- Agent layer: [app/agents](app/agents)
+  - coordinates copy generation, visual prompt generation, and image generation
+- Core layer: [app/core](app/core)
+  - holds configuration, environment settings, and shared Pydantic schemas
+- MCP layer: [app/mcp](app/mcp)
+  - exposes the system as a tool-oriented interface for automation clients
+
+Storage and delivery are handled by:
+
+- [app/utils/azure_storage.py](app/utils/azure_storage.py)
+  - creates an Azure Blob client and uploads bytes to the configured container
+- [frontend/index.html](frontend/index.html)
+  - provides a browser-based UI for working with generated assets
+
+## Prerequisites
+
+- Python 3.11 or newer
+- access to an Azure Storage account (for the assembly upload step)
+- optional: Ollama installed locally if you want to use the Ollama-based generation paths
+- optional: a Hugging Face token if you want to use the Hugging Face inference backend
+
+## Installation
+
+Create and activate a virtual environment, then install dependencies:
 
 ```bash
 python -m venv .venv
@@ -70,11 +112,17 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+If you plan to use Azure Blob uploads, install the Azure dependency explicitly as well:
+
+```bash
+pip install azure-storage-blob
+```
+
 ## Configuration
 
-The application reads configuration from a local `.env` file using [app/core/config.py](app/core/config.py).
+The app reads its settings from a local `.env` file using [app/core/config.py](app/core/config.py).
 
-Useful environment variables include:
+Typical environment variables include:
 
 - `OLLAMA_BASE_URL`
 - `OLLAMA_LLM_MODEL`
@@ -90,14 +138,20 @@ Useful environment variables include:
 - `APP_HOST`
 - `APP_PORT`
 - `LOG_LEVEL`
+- `AZURE_STORAGE_CONNECTION_STRING`
+- `AZURE_STORAGE_CONTAINER_NAME`
 
-Example:
+Example `.env` values:
 
 ```bash
-cp .env.example .env
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_LLM_MODEL=llama3.2
+IMAGE_BACKEND=pollinations
+AZURE_STORAGE_CONNECTION_STRING="DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net"
+AZURE_STORAGE_CONTAINER_NAME=generatedfiles
 ```
 
-## Running the app locally
+## Running the application locally
 
 Start the server with:
 
@@ -105,16 +159,22 @@ Start the server with:
 python main.py
 ```
 
-Open:
+Then open:
 
-- <http://localhost:8000/>
-- <http://localhost:8000/docs>
+- http://localhost:8000/
+- http://localhost:8000/docs
 
-## Backend workflow
+The FastAPI docs page exposes the available API routes and request/response models.
 
-### 1. PDF briefing extraction
+## Main workflows
 
-The endpoint `POST /api/v1/campaign/brief_insights_extraction` accepts a PDF and returns a structured `BriefingJson` object.
+### 1. Extract briefing insights from a PDF
+
+Endpoint:
+
+- `POST /api/v1/campaign/brief_insights_extraction`
+
+This accepts a PDF file and returns a structured JSON object describing the campaign insights.
 
 Example:
 
@@ -123,90 +183,97 @@ curl -X POST http://localhost:8000/api/v1/campaign/brief_insights_extraction \
   -F "file=@briefing.pdf"
 ```
 
-### 2. Campaign generation
+### 2. Generate a full campaign
 
-The endpoint `POST /api/v1/campaign/generate_copy_and_background` accepts a structured briefing and runs the workflow.
+Endpoint:
 
-Example payload:
+- `POST /api/v1/campaign/generate_copy_and_background`
+
+This runs the full workflow and returns both copy and a visual result.
+
+Example request body:
 
 ```json
 {
   "product": "Regenerating Night Cream 50ml",
   "season": "Winter 2025",
-  "audience": "Women 35-55, skin-conscious, premium lifestyle",
-  "goal": "Increase brand awareness",
-  "tone_of_voice": "Sophisticated and reassuring",
-  "brand": "FullCosmetics — The Force of Beauty",
-  "campaign_name": "Winter Ritual 2025",
-  "key_messages": [
-    "Deep skin regeneration while you sleep",
-    "Clinically tested formula"
-  ]
+  "audience": "Women 35-55, skincare-conscious, premium lifestyle",
+  "goal": "Increase brand awareness and drive consideration",
+  "tone_of_voice": "Sophisticated, reassuring, premium",
+  "brand": "FullCosmetics — The Force of Beauty"
 }
 ```
 
-### 3. Copy and visual outputs
+### 3. Generate copy only
 
-The campaign workflow returns:
-
-- copy: top_label, headline, subheadline, and trust_badges text
-- visual: image prompt, image path, base64 image, generation status, and generation model
-
-## REST API reference
-
-### Brief extraction
-
-- `POST /api/v1/campaign/brief_insights_extraction`
-- Uploads a PDF and returns structured briefing JSON
-
-### Generate full campaign
-
-- `POST /api/v1/campaign/generate_copy_and_background`
-- Returns both copy and visual output
-
-### Generate copy only
+Endpoint:
 
 - `POST /api/v1/campaign/generate_copy`
 
-### Generate background only
+Useful when the visual asset should be produced separately or at a later step.
+
+### 4. Generate the background image only
+
+Endpoint:
 
 - `POST /api/v1/campaign/generate_background`
 
-### Retrieve generated image
+Useful when you want to generate the image independently from the textual copy.
 
+### 5. Assemble and upload final assets
+
+Endpoint:
+
+- `POST /api/v1/campaign/assemble_content`
+
+This endpoint takes the current image payload and the assembled campaign copy and uploads the generated PNG and DOCX assets to Azure Blob Storage.
+
+The response contains the uploaded asset URLs so the generated files can be consumed or shared immediately.
+
+## REST API reference
+
+### Campaign endpoints
+
+- `POST /api/v1/campaign/brief_insights_extraction`
+  - upload a PDF brief and receive structured JSON
+- `POST /api/v1/campaign/generate_copy_and_background`
+  - run the full campaign workflow
+- `POST /api/v1/campaign/generate_copy`
+  - generate only the copy output
+- `POST /api/v1/campaign/generate_background`
+  - generate only the visual output
+- `POST /api/v1/campaign/assemble_content`
+  - upload the final image and DOCX copy to Azure Blob Storage
 - `GET /api/v1/campaign/image/{filename}`
-
-### Health check
-
+  - retrieve a generated image from the local output directory
 - `GET /api/v1/health`
+  - service health check
 
 ## Frontend
 
-The frontend is a single-page app in [frontend/index.html](frontend/index.html). It provides:
+The browser UI lives in [frontend/index.html](frontend/index.html). It provides:
 
 - a campaign briefing form
 - PDF upload and extraction flow
-- palette editing for user-selected brand colors
 - copy and background generation actions
-- a prompt viewer for the generated FLUX prompt
-- image preview and download controls
-
-The page uses the REST API to trigger copy generation and background generation separately, and it shows the returned results in the UI.
+- prompt inspection for the generated visual prompt
+- image preview and download support
+- a simple path for assembling and publishing final assets
 
 ## MCP server
 
-The MCP server exposes the core capabilities as callable tools for external automation clients such as Claude Desktop, Cursor, Continue, or integration workflows.
+The MCP server exposes the core workflow as callable tools for automation clients and AI assistants.
 
-### Available MCP endpoints
+### MCP endpoints
 
-- `GET /mcp/tools` — list all available tools
-- `POST /mcp/call` — execute a tool by name
+- `GET /mcp/tools`
+  - list all available tools
+- `POST /mcp/call`
+  - execute a tool by name
 
-### Available MCP tools
+### Available tools
 
-The MCP layer is defined in [app/mcp/tools.py](app/mcp/tools.py) and implemented in [app/mcp/server.py](app/mcp/server.py).
-
-Available tools include:
+The MCP layer is implemented in [app/mcp/server.py](app/mcp/server.py) and [app/mcp/tools.py](app/mcp/tools.py). It currently supports:
 
 - `extract_brief_from_pdf`
 - `generate_campaign`
@@ -214,80 +281,17 @@ Available tools include:
 - `generate_background`
 - `get_campaign_image`
 - `health_check`
-- `get_ready_briefings` (mock Workfront-style integration)
+- `get_ready_briefings`
 
-### Example: list tools
+Example:
 
 ```bash
 curl http://localhost:8000/mcp/tools
 ```
 
-### Example: run a campaign via MCP
-
-```bash
-curl -X POST http://localhost:8000/mcp/call \
-  -H "Content-Type: application/json" \
-  -d '{
-    "tool_name": "generate_campaign",
-    "parameters": {
-      "product": "Regenerating Night Cream 50ml",
-      "season": "Winter 2025",
-      "audience": "Women 35-55",
-      "goal": "Increase brand awareness",
-      "tone_of_voice": "Sophisticated and reassuring",
-      "brand": "FullCosmetics — The Force of Beauty"
-    }
-  }'
-```
-
-## Core modules
-
-### FastAPI app entrypoint
-
-- [main.py](main.py) mounts the REST API, MCP router, and the frontend static files.
-
-### Configuration details
-
-- [app/core/config.py](app/core/config.py) defines the settings model and reads environment variables from `.env`.
-
-### Schemas
-
-- [app/core/schemas.py](app/core/schemas.py) contains the request and response models used by the API and MCP layer.
-
-### Agent layer
-
-#### Coordinator
-
-- [app/agents/coordinator.py](app/agents/coordinator.py) orchestrates the workflow with LangGraph and fan-out/fan-in logic.
-
-#### Copywriter
-
-- [app/agents/copywriter.py](app/agents/copywriter.py) generates the copy assets from the briefing.
-
-#### Visual Expert
-
-- [app/agents/visual_expert.py](app/agents/visual_expert.py) creates the prompt that guides image generation based on the briefing and selected palette.
-
-#### Brief extractor
-
-- [app/agents/brief_extractor.py](app/agents/brief_extractor.py) extracts structured JSON from a PDF briefing.
-
-#### Image generator router
-
-- [app/agents/image_generator.py](app/agents/image_generator.py) routes the prompt to the configured image backend.
-
-### Image backends
-
-The image router supports:
-
-- `pollinations` — default backend
-- `ollama`
-- `hf_inference`
-- `onedrive`
-
-The Pollinations backend is the default and requires no API key.
-
 ## Testing
+
+The repository includes unit and integration-style tests for the campaign flow, MCP layer, and Azure storage helper.
 
 Run the test suite with:
 
@@ -295,11 +299,16 @@ Run the test suite with:
 pytest -q
 ```
 
-The project includes tests for the campaign flow and MCP server layer in [tests](tests).
+Relevant test files include:
+
+- [tests/test_campaign.py](tests/test_campaign.py)
+- [tests/test_mcp_server.py](tests/test_mcp_server.py)
+- [tests/test_visual_expert.py](tests/test_visual_expert.py)
+- [tests/test_azure_storage.py](tests/test_azure_storage.py)
 
 ## Notes
 
-- The app is designed for human review and iterative refinement.
-- The generated image is stored under the configured output directory, by default [output/images](output/images).
-- The Visual Expert prompt and image router are intentionally tuned to reduce common object-generation issues and keep generated backgrounds minimal and pack-shot ready.
+- The generated image output is stored under [output/images](output/images) by default.
+- The assembly step uploads final assets to Azure Blob Storage, so the app does not depend on a local OneDrive folder for final publishing.
+- The system is intended for iterative human review and refinement of campaign assets.
 
