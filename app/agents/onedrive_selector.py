@@ -165,7 +165,7 @@ async def select_image_from_onedrive(prompt: str) -> dict:
     except httpx.HTTPStatusError as e:
         logger.error(
             " [ONEDRIVE SELECTOR] ✗ Ollama HTTP %s: %s",
-            e.response.status_code, e.response.text[:200]
+            e.response.status_code, e.response.text[:200]   
         )
         return {
             "image_base64": None, "image_path": None,

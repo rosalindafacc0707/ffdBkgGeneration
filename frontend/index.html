@@ -505,7 +505,7 @@
     .copy-row:last-child { margin-bottom: 0; }
 
     .copy-field-label {
-      width: 70px;
+      width: 90px;
       flex-shrink: 0;
       font-size: 10px;
       letter-spacing: 0.06em;
@@ -519,8 +519,23 @@
       color: var(--text);
       line-height: 1.5;
     }
-    .copy-field-value.headline { font-size: 15px; font-weight: 300; font-style: italic; }
-    .copy-field-value.tagline { letter-spacing: 0.12em; text-transform: uppercase; font-size: 11px; }
+    .copy-field-value.top-label { letter-spacing: 0.08em; text-transform: uppercase; font-size: 11px; color: var(--accent); }
+    .copy-field-value.headline { font-size: 16px; font-weight: 500; }
+    .copy-field-value.subheadline { font-style: italic; color: var(--text); }
+    
+    .badges-container {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .badge-item {
+      font-size: 10px;
+      background: var(--panel-hi);
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: var(--text-dim);
+    }
 
     /* Empty state */
     .empty-state {
@@ -1010,7 +1025,6 @@
 
 <div class="app">
 
-  <!-- ── TOP BAR ──────────────────────────────────────────────────── -->
   <header class="topbar">
     <div class="logo">
       <div class="logo-mark">
@@ -1039,7 +1053,6 @@
     </div>
   </header>
 
-  <!-- ── LEFT PANEL ─────────────────────────────────────────────── -->
   <aside class="left-panel">
     <div class="panel-header">
       <span class="panel-title">Brief</span>
@@ -1048,7 +1061,6 @@
 
     <div class="panel-scroll">
 
-      <!-- Workfront import (mock) — primary path -->
       <div class="form-section">
         <div class="form-section-label">
           Import from Workfront
@@ -1066,7 +1078,6 @@
 
       <div class="import-divider">or import a PDF</div>
 
-      <!-- PDF upload — secondary / fallback path -->
       <div class="form-section">
         <div class="upload-area" id="upload-area">
           <input type="file" id="pdf-input" accept=".pdf" onchange="onPdfSelected(event)" />
@@ -1087,7 +1098,6 @@
         </button>
       </div>
 
-      <!-- Manual fields -->
       <div class="form-section">
         <div class="form-section-label">Required fields</div>
 
@@ -1129,7 +1139,6 @@
         </div>
       </div>
 
-      <!-- Brand palette -->
       <div class="form-section">
         <div class="form-section-label-row">
           <div class="form-section-label">Brand palette</div>
@@ -1158,7 +1167,6 @@
     </div>
   </aside>
 
-  <!-- ── CENTER PANEL ─────────────────────────────────────────────── -->
   <main class="center-panel" id="tab-generate">
     <div class="canvas-header">
       <span class="canvas-label">Output</span>
@@ -1167,7 +1175,6 @@
 
     <div class="canvas-body" id="canvas-body">
 
-      <!-- Empty state -->
       <div class="empty-state" id="empty-state">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
           <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -1178,7 +1185,6 @@
         <p>Fill in the brief on the left and click Generate campaign to create a copy and background image.</p>
       </div>
 
-      <!-- Process steps (shown while loading) -->
       <div class="process-steps" id="process-steps" style="display:none">
         <div class="step" id="step-brief">
           <div class="step-dot" id="step-brief-dot">1</div>
@@ -1198,7 +1204,6 @@
         </div>
       </div>
 
-      <!-- Loading skeleton -->
       <div id="skeleton" style="display:none; width:100%; max-width:640px;">
         <div class="preview-card">
           <div class="shimmer shimmer-img"></div>
@@ -1217,7 +1222,6 @@
         </div>
       </div>
 
-      <!-- Results -->
       <div id="result-wrap" style="display:none; width:100%; max-width:640px;">
 
         <div class="preview-card" id="result-image-card">
@@ -1243,23 +1247,28 @@
 
         <div class="copy-card" style="margin-top:16px;">
           <div class="copy-card-header">
-            <span>Advertising Copy</span>
+            <span>Advertising Visual Layout Elements</span>
             <div class="copy-card-actions">
-              <button class="btn-copy" onclick="copyCampaignCopy()">Copy text</button>
+              <button class="btn-copy" onclick="copyCampaignCopy()">Copy full text</button>
             </div>
           </div>
           <div class="copy-card-body">
+            <div class="copy-row">
+              <span class="copy-field-label">Top Label</span>
+              <span class="copy-field-value top-label" id="result-top-label">—</span>
+            </div>
             <div class="copy-row">
               <span class="copy-field-label">Headline</span>
               <span class="copy-field-value headline" id="result-headline">—</span>
             </div>
             <div class="copy-row">
-              <span class="copy-field-label">Tagline</span>
-              <span class="copy-field-value tagline" id="result-tagline">—</span>
+              <span class="copy-field-label">Description</span>
+              <span class="copy-field-value subheadline" id="result-subheadline">—</span>
             </div>
             <div class="copy-row">
-              <span class="copy-field-label">Copy</span>
-              <span class="copy-field-value" id="result-copy">—</span>
+              <span class="copy-field-label">Trust Badges</span>
+              <div class="copy-field-value badges-container" id="result-badges">
+                </div>
             </div>
           </div>
         </div>
@@ -1269,7 +1278,6 @@
     </div>
   </main>
 
-  <!-- History tab (hidden by default, replaces center panel) -->
   <main class="center-panel" id="tab-history" style="display:none;">
     <div class="canvas-header">
       <span class="canvas-label">History</span>
@@ -1281,20 +1289,17 @@
     </div>
   </main>
 
-  <!-- ── RIGHT PANEL — Agent log ─────────────────────────────────── -->
   <aside class="right-panel">
     <div class="log-header">
       <span class="panel-title">Agent log</span>
       <button class="btn-clear-log" onclick="clearLog()">Clear</button>
     </div>
     <div class="log-stream" id="log-stream">
-      <!-- Log entries injected here -->
-    </div>
+      </div>
   </aside>
 
 </div>
 
-<!-- ── Prompt viewer dialog ─────────────────────────────────────────── -->
 <div class="dialog-backdrop" id="prompt-dialog" onclick="closeDialog(event)">
   <div class="dialog">
     <div class="dialog-header">
@@ -1305,7 +1310,6 @@
   </div>
 </div>
 
-<!-- ── Workfront ready briefings dialog (mock) ─────────────────────── -->
 <div class="dialog-backdrop" id="wf-dialog" onclick="closeWfDialog(event)">
   <div class="dialog">
     <div class="dialog-header">
@@ -1321,7 +1325,6 @@
   </div>
 </div>
 
-<!-- ── Brand palette editor dialog ──────────────────────────────────── -->
 <div class="dialog-backdrop" id="pal-dialog" onclick="closePaletteEditor(event)">
   <div class="dialog">
     <div class="dialog-header">
@@ -1339,7 +1342,6 @@
   </div>
 </div>
 
-<!-- ── Toast container ──────────────────────────────────────────────── -->
 <div class="toast-container" id="toast-container"></div>
 
 <script>
@@ -1358,7 +1360,7 @@ const DEFAULT_PALETTE = [
   { name: 'Muted Pastel Pink / Pale Shell Pink',      hex: '#F9EDEF' },
   { name: 'Dusty Rose-Beige / Warm Peach-Tinted Tan',  hex: '#E5C8B6' },
   { name: 'Rich Toffee Gold / Ochre Brown',     hex: '#C3955A' },
-  { name: 'Burnt Terracotta Orange / Deep Amber',      hex: '#BA6A37' },
+  { name: 'Burnt Terracotta Orange / Deep Amber',       hex: '#BA6A37' },
   { name: 'Deep Forest Green / Midnight Emerald',    hex: '#1C3934' },
   { name: 'Absolute Obsidian Black / Matte Jet Black',       hex: '#131315' },
   { name: 'Deep Dark Chocolate Brown / Near-Black Espresso',   hex: '#241515' },
@@ -1668,58 +1670,7 @@ async function generate() {
       body: JSON.stringify(briefing),
     });
 
-    clearTimeout(copyTimer);
-    clearTimeout(visualTimer);
-
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ detail: resp.statusText }));
-      throw new Error(err.detail || resp.statusText);
-    }
-
-    const copyData = await resp.json();
-    const elapsedCopy = ((Date.now() - t0) / 1000).toFixed(1);
-
-    log('Copywriter', `✓ Done in ${elapsedCopy}s`, 'success');
-    log('Copywriter', `Headline: ${copyData.copy?.headline}`, 'info');
-    log('Copywriter', `Tagline: ${copyData.copy?.tagline}`, 'dim');
-
-    currentResult = {
-      briefing,
-      copy: copyData.copy,
-      visual: {},
-      status: copyData.status,
-    };
-    renderResult(currentResult, elapsedCopy);
-    saveToHistory(currentResult);
-
-    setStep('copy', 'done');
-    setStatus('running', 'Generating background image…');
-    setStep('image', 'running');
-
-    const imgResp = await fetch(`${API_BASE}/campaign/generate_background`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(briefing),
-    });
-
-    if (!imgResp.ok) {
-      const err = await imgResp.json().catch(() => ({ detail: imgResp.statusText }));
-      throw new Error(err.detail || imgResp.statusText);
-    }
-
-    const visualData = await imgResp.json();
-    const elapsedTotal = ((Date.now() - t0) / 1000).toFixed(1);
-
-    log('Visual Expert', `✓ Background generated`, 'success');
-    log('Visual Expert', `Model: ${visualData.visual?.generation_model || '—'}`, 'info');
-
-    currentResult.visual = visualData.visual;
-    currentResult.status = visualData.status;
-    renderResult(currentResult, elapsedTotal);
-
-    setStep('visual', 'done');
-    setStep('image', 'done');
-    setStatus('idle', 'Done');
+    onCopyGenerationFinished(resp, copyTimer, visualTimer, t0, briefing);
 
   } catch (err) {
     clearTimeout(copyTimer);
@@ -1741,6 +1692,60 @@ async function generate() {
   } finally {
     setRunning(false);
   }
+}
+
+async function onCopyGenerationFinished(resp, copyTimer, visualTimer, t0, briefing) {
+  clearTimeout(copyTimer);
+  clearTimeout(visualTimer);
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+    throw new Error(err.detail || resp.statusText);
+  }
+
+  const copyData = await resp.json();
+  const elapsedCopy = ((Date.now() - t0) / 1000).toFixed(1);
+
+  log('Copywriter', `✓ Done in ${elapsedCopy}s`, 'success');
+  log('Copywriter', `Headline: ${copyData.copy?.headline}`, 'info');
+
+  currentResult = {
+    briefing,
+    copy: copyData.copy,
+    visual: {},
+    status: copyData.status,
+  };
+  renderResult(currentResult, elapsedCopy);
+  saveToHistory(currentResult);
+
+  setStep('copy', 'done');
+  setStatus('running', 'Generating background image…');
+  setStep('image', 'running');
+
+  const imgResp = await fetch(`${API_BASE}/campaign/generate_background`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(briefing),
+  });
+
+  if (!imgResp.ok) {
+    const err = await imgResp.json().catch(() => ({ detail: imgResp.statusText }));
+    throw new Error(err.detail || imgResp.statusText);
+  }
+
+  const visualData = await imgResp.json();
+  const elapsedTotal = ((Date.now() - t0) / 1000).toFixed(1);
+
+  log('Visual Expert', `✓ Background generated`, 'success');
+  log('Visual Expert', `Model: ${visualData.visual?.generation_model || '—'}`, 'info');
+
+  currentResult.visual = visualData.visual;
+  currentResult.status = visualData.status;
+  renderResult(currentResult, elapsedTotal);
+
+  setStep('visual', 'done');
+  setStep('image', 'done');
+  setStatus('idle', 'Done');
 }
 
 /* ── Form helpers ─────────────────────────────────────────────────── */
@@ -1795,22 +1800,35 @@ function renderResult(data, elapsed) {
   document.getElementById('canvas-meta').textContent =
     `${data.briefing?.product || ''} · ${data.briefing?.season || ''} · ${elapsed}s`;
 
-  // Copy
-  const headlineEl = document.getElementById('result-headline');
-  const taglineEl = document.getElementById('result-tagline');
-  const copyEl = document.getElementById('result-copy');
+  // Mappatura nuovi campi dal System Prompt
+  const topLabelEl  = document.getElementById('result-top-label');
+  const headlineEl  = document.getElementById('result-headline');
+  const subheadlineEl = document.getElementById('result-subheadline');
+  const badgesEl    = document.getElementById('result-badges');
 
-  headlineEl.textContent = copy.headline || '—';
-  taglineEl.textContent  = copy.tagline  || '—';
-  copyEl.textContent     = copy.copy_text || '—';
+  topLabelEl.textContent  = copy.top_label || '—';
+  headlineEl.textContent  = copy.headline || '—';
+  subheadlineEl.textContent = copy.subheadline || '—';
 
-  [headlineEl, taglineEl, copyEl].forEach(el => {
+  // Gestione Trust Badges (Array)
+  badgesEl.innerHTML = '';
+  if (copy.trust_badges && Array.isArray(copy.trust_badges)) {
+    copy.trust_badges.forEach(badge => {
+      const bSpan = document.createElement('span');
+      bSpan.className = 'badge-item';
+      bSpan.textContent = badge;
+      badgesEl.appendChild(bSpan);
+    });
+  } else {
+    badgesEl.innerHTML = '<span style="color:var(--text-muted)">—</span>';
+  }
+
+  [topLabelEl, headlineEl, subheadlineEl].forEach(el => {
     el.setAttribute('contenteditable', 'true');
     el.classList.add('editable');
   });
 
-  // Overlay
-  // Image
+  // Image Layout Rendering
   const img = document.getElementById('result-img');
   const placeholder = document.getElementById('img-placeholder');
   const placeholderText = document.getElementById('img-placeholder-text');
@@ -1832,7 +1850,7 @@ function renderResult(data, elapsed) {
 
     if (waiting) {
       window.requestAnimationFrame(() => {
-        const copyRow = document.getElementById('result-copy');
+        const copyRow = document.getElementById('result-subheadline');
         if (copyRow) {
           copyRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -1840,24 +1858,125 @@ function renderResult(data, elapsed) {
     }
   }
 
-  document.getElementById('result-model').textContent =
-    visual.generation_model || '—';
+  document.getElementById('result-model').textContent = visual.generation_model || '—';
 }
 
-function copyCampaignCopy() {
-  const headline = document.getElementById('result-headline')?.textContent || '';
-  const tagline = document.getElementById('result-tagline')?.textContent || '';
-  const copyText = document.getElementById('result-copy')?.textContent || '';
-  const fullCopy = `${headline}\n\n${tagline}\n\n${copyText}`.trim();
+/* ── Copy full text (with clipboard fallback for restricted contexts) ─ */
+async function copyCampaignCopy() {
+  // Funzione di utility per ripulire il testo dai fallback di default della UI
+  const cleanText = (id) => {
+    const txt = document.getElementById(id)?.textContent?.trim() || '';
+    return txt === '—' ? '' : txt;
+  };
+
+  const topLabel    = cleanText('result-top-label');
+  const headline    = cleanText('result-headline');
+  const subheadline = cleanText('result-subheadline');
+
+  // Estrai i singoli testi dei trust badges dall'array dinamico
+  const badgesEls = document.querySelectorAll('#result-badges .badge-item');
+  let badges = [];
+  badgesEls.forEach(b => {
+    const txt = b.textContent?.trim();
+    if (txt && txt !== '—') badges.push(txt);
+  });
+  const trustText = badges.length ? `[${badges.join(' | ')}]` : '';
+
+  // Compone il copy finale saltando le righe vuote
+  const components = [topLabel, headline, subheadline, trustText].filter(Boolean);
+  const fullCopy = components.join('\n\n').trim();
 
   if (!fullCopy) {
     toast('Nothing to copy yet.', 'error');
     return;
   }
 
-  navigator.clipboard.writeText(fullCopy)
-    .then(() => toast('Copy text copied to clipboard.', 'success'))
-    .catch(() => toast('Unable to copy text.', 'error'));
+  const copied = await copyTextToClipboard(fullCopy);
+  if (copied) {
+    toast('Campaign components copied to clipboard.', 'success');
+  } else {
+    toast('Unable to copy automatically — text selected, use Cmd/Ctrl+C.', 'error');
+    selectTextInHiddenArea(fullCopy);
+  }
+}
+
+/**
+ * Tries the modern async Clipboard API first (works in normal https/localhost tabs),
+ * then falls back to the legacy execCommand('copy') approach via a hidden textarea.
+ * The fallback is what makes this work inside sandboxed iframes/webviews (e.g. embedded
+ * previews) where navigator.clipboard is blocked or missing entirely.
+ */
+async function copyTextToClipboard(text) {
+  // Attempt 1: modern Clipboard API
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (err) {
+    // fall through to legacy approach
+  }
+
+  // Attempt 2: legacy execCommand fallback
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    // Keep it in the viewport (off-screen but not display:none) so execCommand can select it
+    textarea.style.position = 'fixed';
+    textarea.style.top = '0';
+    textarea.style.left = '0';
+    textarea.style.width = '2em';
+    textarea.style.height = '2em';
+    textarea.style.padding = '0';
+    textarea.style.border = 'none';
+    textarea.style.outline = 'none';
+    textarea.style.boxShadow = 'none';
+    textarea.style.background = 'transparent';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return successful;
+  } catch (err) {
+    return false;
+  }
+}
+
+/**
+ * Last-resort UX: if even execCommand fails (fully sandboxed environments),
+ * show the text selected in a visible textarea so the user can copy it manually.
+ */
+function selectTextInHiddenArea(text) {
+  let box = document.getElementById('manual-copy-box');
+  if (!box) {
+    box = document.createElement('textarea');
+    box.id = 'manual-copy-box';
+    box.readOnly = true;
+    box.style.position = 'fixed';
+    box.style.left = '50%';
+    box.style.top = '50%';
+    box.style.transform = 'translate(-50%, -50%)';
+    box.style.width = '360px';
+    box.style.height = '160px';
+    box.style.zIndex = '10000';
+    box.style.background = 'var(--panel-hi)';
+    box.style.color = 'var(--text)';
+    box.style.border = '1px solid var(--border-hi)';
+    box.style.borderRadius = '8px';
+    box.style.padding = '12px';
+    box.style.fontFamily = 'var(--mono)';
+    box.style.fontSize = '12px';
+    document.body.appendChild(box);
+  }
+  box.value = text;
+  box.style.display = 'block';
+  box.focus();
+  box.select();
+  setTimeout(() => { box.style.display = 'none'; }, 6000);
 }
 
 function showSkeleton() {

@@ -59,20 +59,88 @@ def _normalize_palette(briefing) -> list[tuple[str, str]]:
     return normalized
 
 
+def _hex_to_luminance(hex_value: str) -> float:
+    """Perceived luminance (0=dark, 1=light) from a hex color string."""
+    hex_clean = hex_value.lstrip("#").strip()
+    if len(hex_clean) != 6:
+        return 0.5  # unknown/invalid → neutral, don't let it skew sorting
+    try:
+        r = int(hex_clean[0:2], 16) / 255.0
+        g = int(hex_clean[2:4], 16) / 255.0
+        b = int(hex_clean[4:6], 16) / 255.0
+    except ValueError:
+        return 0.5
+    return 0.299 * r + 0.587 * g + 0.114 * b
+
+
+def _classify_season(season: str) -> str:
+    """Buckets a free-text season into 'dark' (winter/autumn), 'light' (spring/summer), or 'neutral'."""
+    season_lower = (season or "").lower()
+    dark_keywords = ("winter", "autumn", "fall")
+    light_keywords = ("spring", "summer")
+
+    if any(keyword in season_lower for keyword in dark_keywords):
+        return "dark"
+    if any(keyword in season_lower for keyword in light_keywords):
+        return "light"
+    return "neutral"
+
+
+def _order_palette_by_season(palette: list[tuple[str, str]], season: str) -> list[tuple[str, str]]:
+    """
+    Reorders the palette so the most season-appropriate tones come first:
+    - winter/autumn → darkest colors first
+    - spring/summer → lightest colors first
+    - anything else → left in original order
+    """
+    season_bucket = _classify_season(season)
+    if season_bucket == "dark":
+        return sorted(palette, key=lambda entry: _hex_to_luminance(entry[1]))
+    if season_bucket == "light":
+        return sorted(palette, key=lambda entry: _hex_to_luminance(entry[1]), reverse=True)
+    return list(palette)
+
+
 def build_palette_context(briefing) -> str:
-    palette = _normalize_palette(briefing)
-    palette_text = " · ".join(f"{name} {hex_value}" for name, hex_value in palette[:6])
+    raw_palette = _normalize_palette(briefing)
+    season = briefing.season
+    season_bucket = _classify_season(season)
+
+    ordered_palette = _order_palette_by_season(raw_palette, season)
+    palette_text = " · ".join(f"{name} {hex_value}" for name, hex_value in ordered_palette[:6])
+
     mood_hint = " ".join(
         part for part in [briefing.season, briefing.tone_of_voice, briefing.goal] if part
     ).strip()
 
-    # UPDATED: Stricter prompt engineering targeting FLUX color cast prevention
-    return f"""Palette source of truth (frontend-selected if available): {palette_text}
+    # UPDATED: Season-driven tonal preference — dark palette for winter/autumn, light palette for spring/summer
+    if season_bucket == "dark":
+        season_rule = (
+            f"- SEASON RULE (Winter/Autumn detected — '{season}'): prioritize the DEEP/DARK end of the "
+            "palette above (obsidian black, deep chocolate, forest green, burnt terracotta, deep shadow tones). "
+            "The dominant wall tone and shadow tone should both skew dark. Lighter tones from the palette, if "
+            "used at all, should appear only as a minor accent or floor highlight, never dominant."
+        )
+    elif season_bucket == "light":
+        season_rule = (
+            f"- SEASON RULE (Spring/Summer detected — '{season}'): prioritize the LIGHT/PALE end of the "
+            "palette above (blush white, ivory cream, pale greige, crisp studio white). The dominant wall tone "
+            "and floor tone should both skew light and airy. Darker tones from the palette, if used at all, "
+            "should appear only as a subtle shadow accent, never dominant."
+        )
+    else:
+        season_rule = (
+            f"- SEASON RULE: season '{season}' has no explicit dark/light bias — choose freely from the "
+            "palette based on mood and product fit."
+        )
+
+    return f"""Palette source of truth (frontend-selected if available, reordered for season fit): {palette_text}
 Selection guidance:
 - Choose 2-4 colors from this palette based on the campaign mood, season, and product.
 - Use one dominant wall tone, one secondary shadow tone, and optionally one lighter floor tone.
 - Match the palette to the briefing context ({mood_hint or 'general campaign mood'}), not to a fixed default.
-- Prefer the provided frontend colors; do not invent unrelated colors.
+- Use only the provided frontend colors; do not invent unrelated colors.
+{season_rule}
 - CRITICAL FOR FLUX: To avoid destroying the pink/beige tones, always enforce 'neutral white studio lighting' or 'clean white illumination' to prevent yellow color shifts.
 """
 
@@ -101,6 +169,7 @@ PALETTE RULES — use the palette provided in the briefing context as the source
 - Pick the most fitting colors from that palette for the campaign mood, season, audience, and product.
 - Use 2-4 colors max, with one dominant tonal field, one supporting shadow/shift, and an optional accent.
 - Keep the palette coherent and artistic; do not invent unrelated colors.
+- Respect the SEASON RULE included in the briefing context: winter/autumn briefs must skew the dominant and shadow tones DARK; spring/summer briefs must skew the dominant and floor tones LIGHT.
 
 FORBIDDEN WORDS — never include in output:
 product, placement, compositing, backdrop for, surface for, podium, pedestal, riser,
@@ -163,7 +232,7 @@ PROMPT STRUCTURE — comma-separated, 50-90 words, no sentences:
 
 WORD COUNT TARGET: 50-90 words. Stop at 90. Do not exceed.
 
-Adapt material (limewash plaster / microcement / fine stucco / tadelakt), colors, light direction, and angle to best match the campaign mood and season.
+Adapt material (limewash plaster / microcement / fine stucco / tadelakt), colors, light direction, and angle to best match the campaign mood and season. Colors MUST follow the SEASON RULE above — do not default to light/pastel tones for a winter or autumn brief, and do not default to dark/deep tones for a spring or summer brief.
 
 {REFERENCE_PROMPT_EXAMPLE}
 

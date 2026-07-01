@@ -28,9 +28,10 @@ class BriefingInput(BaseModel):
 
 
 class CopyResult(BaseModel):
-    copy_text: str
+    top_label: str
     headline: str
-    tagline: str
+    subheadline: str
+    trust_badges: list[str]
 
 
 class VisualResult(BaseModel):

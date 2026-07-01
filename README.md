@@ -9,7 +9,7 @@ The system takes a campaign brief, extracts structured information from a PDF, g
 ### Core capabilities
 
 - Extract structured campaign JSON from a PDF briefing
-- Generate headline, tagline, and body copy
+- Generate top_label, headline, subheadline, and trust_badges copy
 - Build a prompt for FLUX-style image generation from the briefing and palette
 - Generate background images through Pollinations, Hugging Face Inference, Ollama, or OneDrive-based selection
 - Provide a browser UI for form input, palette editing, image generation, and prompt inspection
@@ -149,7 +149,7 @@ Example payload:
 
 The campaign workflow returns:
 
-- copy: headline, tagline, and copy text
+- copy: top_label, headline, subheadline, and trust_badges text
 - visual: image prompt, image path, base64 image, generation status, and generation model
 
 ## REST API reference

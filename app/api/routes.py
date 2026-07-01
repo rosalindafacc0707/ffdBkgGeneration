@@ -108,7 +108,7 @@ async def generate_campaign(briefing: BriefingInput) -> CampaignOutput:
     summary="Generate campaign copy only",
     response_model=CopyOnlyOutput,
     description=(
-        "Genera solo la parte testuale della campagna (headline/tagline/copy). "
+        "Genera solo la parte testuale della campagna (top_label/headline/subheadline/trust_badges). "
         "This endpoint returns copy immediately while image generation can run later."
     ),
 )

@@ -112,8 +112,9 @@ async def run_campaign(briefing: BriefingInput) -> CampaignOutput:
     visual = final_state.get("visual")
 
     if copy:
-        logger.info("   Copy    → headline: '%s'", copy.headline)
-        logger.info("            tagline:  '%s'", copy.tagline)
+        logger.info("   Copy    → top_label: '%s'", copy.top_label)
+        logger.info("            headline:  '%s'", copy.headline)
+        logger.info("            subheadline:  '%s'", copy.subheadline)
     if visual:
         logger.info("   Visual  → status: %s | model: %s",
                     visual.generation_status, visual.generation_model)
