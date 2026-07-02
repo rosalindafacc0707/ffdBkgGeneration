@@ -247,32 +247,7 @@
 
     .field select option { background: var(--panel); }
 
-    /* PDF upload area */
-    .upload-area {
-      border: 1px dashed var(--border);
-      border-radius: var(--radius);
-      padding: 10px 12px;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
-      position: relative;
-      opacity: 0.75;
-    }
-    .upload-area:hover, .upload-area.drag-over {
-      border-color: var(--border-hi);
-      background: rgba(255,255,255,0.015);
-      opacity: 1;
-    }
-    .upload-area input[type="file"] {
-      position: absolute; inset: 0; opacity: 0; cursor: pointer;
-    }
-    .upload-icon {
-      width: 16px; height: 16px;
-      margin: 0 auto 5px;
-      color: var(--text-muted);
-    }
     .upload-label { font-size: 10.5px; color: var(--text-muted); }
-    .upload-sub { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
     .upload-filename {
       font-size: 10px;
       color: var(--text-dim);
@@ -853,6 +828,19 @@
       font-family: var(--mono);
       margin-top: 3px;
     }
+    .wf-item-url {
+      margin-top: 6px;
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: var(--mono);
+    }
+    .wf-item-url a {
+      color: var(--link);
+      text-decoration: none;
+    }
+    .wf-item-url a:hover {
+      text-decoration: underline;
+    }
     .wf-empty, .wf-loading {
       padding: 28px 18px;
       text-align: center;
@@ -1163,20 +1151,9 @@
       <div class="import-divider">or import a PDF</div>
 
       <div class="form-section">
-        <div class="upload-area" id="upload-area">
-          <input type="file" id="pdf-input" accept=".pdf" onchange="onPdfSelected(event)" />
-          <div class="upload-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="12" y1="18" x2="12" y2="12"/>
-              <line x1="9" y1="15" x2="15" y2="15"/>
-            </svg>
-          </div>
-          <div class="upload-label">Drop PDF brief here</div>
-          <div class="upload-sub">or click to browse</div>
-          <div class="upload-filename" id="pdf-filename"></div>
-        </div>
+        <input type="file" id="pdf-input" accept=".pdf" onchange="onPdfSelected(event)" style="display:none;" />
+        <label class="btn-file" for="pdf-input">Choose PDF brief</label>
+        <div class="upload-filename" id="pdf-filename"></div>
         <button class="btn-extract" id="btn-extract" onclick="extractBrief()" disabled>
           Extract brief insights
         </button>
@@ -1494,21 +1471,6 @@ function onPdfSelected(e) {
   document.getElementById('btn-extract').disabled = false;
 }
 
-// Drag-and-drop
-const uploadArea = document.getElementById('upload-area');
-uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
-uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
-uploadArea.addEventListener('drop', e => {
-  e.preventDefault();
-  uploadArea.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file && file.name.endsWith('.pdf')) {
-    pdfFile = file;
-    document.getElementById('pdf-filename').textContent = file.name;
-    document.getElementById('btn-extract').disabled = false;
-  }
-});
-
 async function extractBrief() {
   if (!pdfFile || isRunning) return;
   setRunning(true);
@@ -1594,6 +1556,7 @@ async function loadWorkfrontBriefings() {
             <span class="wf-item-status">${escHtml(b.status || 'Ready')}</span>
           </div>
           <div class="wf-item-meta">${escHtml(p.brand || '—')} · ${escHtml(p.campaign_name || '—')} · ${escHtml(p.season || '—')}</div>
+          ${p.product_url ? `<div class="wf-item-url"><a href="${escHtml(p.product_url)}" target="_blank">Product URL</a></div>` : ''}
           <div class="wf-item-task">${escHtml(b.workfront_task_id || '')} · ${escHtml(b.workfront_project_id || '')}</div>
         </div>
       `;

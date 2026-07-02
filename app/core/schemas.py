@@ -10,6 +10,7 @@ class ColorPaletteEntry(BaseModel):
 class BriefingInput(BaseModel):
     """Input JSON extracted from campaign briefing."""
     product: Optional[str] = Field(..., description="Name/description of the product")
+    product_url: Optional[str] = Field(None, description="Optional product-related URL extracted from the briefing")
     season: Optional[str] = Field(..., description="Season/period of the campaign")
     audience: Optional[str] = Field(..., description="Target audience")
     goal: Optional[str] = Field(..., description="Goal of the campaign")
@@ -74,6 +75,7 @@ class BriefingOriginalDocInput(BaseModel):
 class BriefingJson(BaseModel):
     """Output: structured valid JSON extracted from the original briefing."""
     product: Optional[str] = Field(..., description="Name/description of the product")
+    product_url: Optional[str] = Field(None, description="Optional product-related URL extracted from the briefing")
     season: Optional[str] = Field(..., description="Season/period of the campaign")
     audience: Optional[str] = Field(..., description="Target audience")
     goal: Optional[str] = Field(..., description="Goal of the campaign")

@@ -24,6 +24,7 @@ ALLOWED_CONTENT_TYPES = {
     "application/pdf",
     "application/x-pdf",
     "application/acrobat",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 }
 MAX_FILE_SIZE_MB = 10
 # ----------------------
@@ -51,12 +52,12 @@ async def generate_brief_json(
     content_type = file.content_type or ""
     filename = file.filename or "unknown.pdf"
 
-    if not filename.lower().endswith(".pdf") and content_type not in ALLOWED_CONTENT_TYPES:
+    if not filename.lower().endswith((".pdf", ".xlsx")) and content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
             status_code=415,
             detail=(
                 f"Formato file non supportato: '{content_type}'. "
-                "Carica un file PDF (.pdf)."
+                "Carica un file PDF (.pdf) o Excel (.xlsx)."
             ),
         )
 
