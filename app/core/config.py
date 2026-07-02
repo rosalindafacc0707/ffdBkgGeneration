@@ -44,6 +44,13 @@ class Settings(BaseSettings):
     azure_storage_connection_string: Optional[str] = Field(None, env="AZURE_STORAGE_CONNECTION_STRING")
     azure_storage_container_name: str = Field("generatedfiles", env="AZURE_STORAGE_CONTAINER_NAME")
 
+    # Azure Blob Storage container hosting the source product images
+    # referenced by `product_url` in the briefing (private container,
+    # accessed via a temporary SAS-signed URL — see app/utils/azure_storage.py)
+    azure_storage_container_name_products: str = Field(
+        "products", env="AZURE_STORAGE_CONTAINER_NAME_PRODUCTS"
+    )
+
     # App
     app_host: str = Field("0.0.0.0", env="APP_HOST")
     app_port: int = Field(8000, env="APP_PORT")

@@ -16,7 +16,7 @@ from app.core.config import settings
 from app.agents.coordinator import run_campaign, run_copy, run_visual
 from app.agents.brief_extractor import run_generate_brief_json
 from app.mcp.workfront_mock import get_ready_briefings
-from app.utils.azure_storage import upload_bytes_to_azure_blob
+from app.utils.azure_storage import upload_bytes_to_azure_blob, generate_product_image_sas_url
 
 
 # Utils for the service of brief json extraction ---------
@@ -166,6 +166,28 @@ async def get_image(filename: str):
 @router.get("/health", summary="Health check")
 async def health():
     return {"status": "ok", "service": "FullForce Ad Generator"}
+
+
+@router.get(
+    "/campaign/product_image_url",
+    summary="Genera un URL temporaneo (SAS) per visualizzare l'immagine prodotto",
+    description=(
+        "Il `product_url` restituito nel briefing (es. da /campaign/brief_insights_extraction "
+        "o dal mock Workfront) punta a un blob nel container privato "
+        "AZURE_STORAGE_CONTAINER_NAME_PRODUCTS, che non consente accesso pubblico anonimo. "
+        "Questo endpoint genera un URL firmato (SAS), valido temporaneamente, utilizzabile "
+        "direttamente dal frontend per il rendering dell'immagine."
+    ),
+)
+async def get_product_image_url(url: str):
+    try:
+        sas_url = generate_product_image_sas_url(url)
+        return {"url": sas_url}
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        logger.error("API error (product_image_url): %s", e)
+        raise HTTPException(status_code=500, detail=f"Errore generazione URL immagine prodotto: {e}")
 
 
 # ─────────────────────────────────────────────────────────────────────────

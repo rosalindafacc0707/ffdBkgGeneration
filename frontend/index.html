@@ -185,6 +185,7 @@
     .panel-scroll {
       flex: 1;
       overflow-y: auto;
+      overflow-x: hidden;
       padding: 14px 16px;
     }
     .panel-scroll::-webkit-scrollbar { width: 4px; }
@@ -253,6 +254,55 @@
       color: var(--text-dim);
       margin-top: 5px;
       font-family: var(--mono);
+    }
+
+    /* Product reference thumbnail — low-emphasis, informational only */
+    .product-ref {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 6px;
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.015);
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .product-ref:hover { border-color: var(--border-hi); }
+    .product-ref img {
+      width: 26px;
+      height: 26px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .product-ref-label {
+      font-size: 9.5px;
+      color: var(--text-muted);
+      letter-spacing: 0.03em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Product image overlay — temporary full-size preview */
+    .product-image-dialog {
+      width: auto;
+      max-width: 90vw;
+    }
+    .product-image-dialog-body {
+      padding: 16px 18px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .product-image-dialog-body img {
+      max-width: 100%;
+      max-height: 70vh;
+      border-radius: var(--radius);
+      display: block;
     }
 
     /* ── panel footer buttons ─── */
@@ -1116,6 +1166,10 @@
         <div class="field">
           <label>Product <span class="required">*</span></label>
           <input type="text" id="f-product" placeholder="e.g. Regenerating Night Cream 50ml" />
+          <div class="product-ref" id="product-ref" style="display:none;" onclick="openProductImageOverlay()" title="Click to preview">
+            <img id="product-ref-img" src="" alt="Product reference" onerror="hideProductRef()" />
+            <span class="product-ref-label">Reference image from brief</span>
+          </div>
         </div>
         <div class="field">
           <label>Season <span class="required">*</span></label>
@@ -1362,6 +1416,18 @@
   </div>
 </div>
 
+<div class="dialog-backdrop" id="product-image-dialog" onclick="closeProductImageOverlay(event)">
+  <div class="dialog product-image-dialog">
+    <div class="dialog-header">
+      <span class="dialog-title">Product reference</span>
+      <button class="dialog-close" onclick="closeProductImageOverlay()">×</button>
+    </div>
+    <div class="dialog-body product-image-dialog-body">
+      <img id="product-image-dialog-img" src="" alt="Product reference" />
+    </div>
+  </div>
+</div>
+
 <!-- ── AGGIUNTO: Struttura dell'overlay temporaneo con sfondo sfocato per l'assembly completato ── -->
 <div class="overlay-blur-message" id="assembly-success-overlay">
   <div class="overlay-message-content">
@@ -1380,6 +1446,7 @@ const API_BASE = 'http://localhost:8000/api/v1';
 let currentResult = null;
 let currentBriefing = null;
 let isRunning = false;
+let currentProductUrl = null;
 let history = JSON.parse(localStorage.getItem('ff_history') || '[]');
 let originalPromptText = ""; 
 
@@ -1477,9 +1544,56 @@ function selectWorkfrontBriefing(idx) {
   setField('f-brand', p.brand || '');
   setField('f-campaign', p.campaign_name || '');
   setField('f-messages', (p.key_messages || []).join('\n'));
+  showProductRef(p.product_url);
 
   toast('Briefing loaded from Workfront.', 'success');
   closeWfDialog();
+}
+
+/* ── Product reference thumbnail (informational, low-emphasis) ─────── */
+async function showProductRef(url) {
+  currentProductUrl = url || null;
+  const box = document.getElementById('product-ref');
+  const img = document.getElementById('product-ref-img');
+
+  if (!url) {
+    box.style.display = 'none';
+    img.src = '';
+    document.getElementById('product-image-dialog-img').src = '';
+    closeProductImageOverlay();
+    return;
+  }
+
+  // product_url points to a private Azure Blob container — it needs to be
+  // exchanged for a temporary SAS-signed URL before it can be rendered.
+  try {
+    const resp = await fetch(`${API_BASE}/campaign/product_image_url?url=${encodeURIComponent(url)}`);
+    if (!resp.ok) throw new Error('signed URL request failed');
+    const data = await resp.json();
+    img.src = data.url;
+    box.style.display = 'flex';
+  } catch (err) {
+    // Fail silently — this is a non-essential reference preview.
+    box.style.display = 'none';
+    img.src = '';
+  }
+}
+
+function hideProductRef() {
+  document.getElementById('product-ref').style.display = 'none';
+}
+
+function openProductImageOverlay() {
+  const thumbImg = document.getElementById('product-ref-img');
+  if (!thumbImg || !thumbImg.src) return;
+  document.getElementById('product-image-dialog-img').src = thumbImg.src;
+  document.getElementById('product-image-dialog').classList.add('open');
+}
+
+function closeProductImageOverlay(e) {
+  if (!e || e.target.id === 'product-image-dialog' || e.target.classList.contains('dialog-close')) {
+    document.getElementById('product-image-dialog').classList.remove('open');
+  }
 }
 
 /* ── Brand palette ────────────────────────────────────────────────── */
@@ -1692,6 +1806,7 @@ function collectBriefing() {
   const messages = get('f-messages').trim();
   return {
     product,
+    product_url: currentProductUrl || null,
     season,
     audience,
     goal,
@@ -1712,6 +1827,7 @@ function clearForm() {
   if (document.getElementById('assembly-container')) {
     document.getElementById('assembly-container').style.display = 'none';
   }
+  showProductRef(null);
   resetPalette();
 }
 
