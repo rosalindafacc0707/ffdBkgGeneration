@@ -255,44 +255,6 @@
       font-family: var(--mono);
     }
 
-    /* Extract button — secondary, low-emphasis */
-    .btn-extract {
-      width: 100%;
-      padding: 6px;
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--text-muted);
-      font-family: var(--sans);
-      font-size: 11px;
-      cursor: pointer;
-      transition: all 0.15s;
-      margin-top: 6px;
-    }
-    .btn-extract:hover:not(:disabled) {
-      border-color: var(--border-hi);
-      color: var(--text-dim);
-    }
-    .btn-extract:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    .import-divider {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 14px 0 12px;
-      color: var(--text-muted);
-      font-size: 9px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-    .import-divider::before,
-    .import-divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-    }
-
     /* ── panel footer buttons ─── */
     .panel-footer {
       padding: 12px 16px;
@@ -1148,17 +1110,6 @@
         </button>
       </div>
 
-      <div class="import-divider">or import a PDF</div>
-
-      <div class="form-section">
-        <input type="file" id="pdf-input" accept=".pdf" onchange="onPdfSelected(event)" style="display:none;" />
-        <label class="btn-file" for="pdf-input">Choose PDF brief</label>
-        <div class="upload-filename" id="pdf-filename"></div>
-        <button class="btn-extract" id="btn-extract" onclick="extractBrief()" disabled>
-          Extract brief insights
-        </button>
-      </div>
-
       <div class="form-section">
         <div class="upload-label" style="text-align:left; margin-bottom:8px; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted);">Required fields</div>
 
@@ -1429,7 +1380,6 @@ const API_BASE = 'http://localhost:8000/api/v1';
 let currentResult = null;
 let currentBriefing = null;
 let isRunning = false;
-let pdfFile = null;
 let history = JSON.parse(localStorage.getItem('ff_history') || '[]');
 let originalPromptText = ""; 
 
@@ -1460,61 +1410,6 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-btn')[tab === 'generate' ? 0 : 1].classList.add('active');
   document.getElementById('tab-generate').style.display = tab === 'generate' ? 'flex' : 'none';
   document.getElementById('tab-history').style.display  = tab === 'history'  ? 'flex' : 'none';
-}
-
-/* ── PDF handling ─────────────────────────────────────────────────── */
-function onPdfSelected(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  pdfFile = file;
-  document.getElementById('pdf-filename').textContent = file.name;
-  document.getElementById('btn-extract').disabled = false;
-}
-
-async function extractBrief() {
-  if (!pdfFile || isRunning) return;
-  setRunning(true);
-
-  setStep('brief', 'running');
-  setStatus('running', 'Extracting brief…');
-
-  const formData = new FormData();
-  formData.append('file', pdfFile);
-
-  try {
-    const t0 = Date.now();
-    const resp = await fetch(`${API_BASE}/campaign/brief_insights_extraction`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ detail: resp.statusText }));
-      throw new Error(err.detail || resp.statusText);
-    }
-
-    const data = await resp.json();
-    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-
-    // Fill form
-    setField('f-product', data.product);
-    setField('f-season', data.season);
-    setField('f-audience', data.audience);
-    setField('f-goal', data.goal);
-    setField('f-tone', data.tone_of_voice);
-    setField('f-brand', data.brand || '');
-    setField('f-campaign', data.campaign_name || '');
-    setField('f-messages', (data.key_messages || []).join('\n'));
-
-    setStep('brief', 'done');
-    toast('Brief extracted — review and generate.', 'success');
-  } catch (err) {
-    setStep('brief', '');
-    toast(`Extraction failed: ${err.message}`, 'error');
-  } finally {
-    setRunning(false);
-    setStatus('idle', 'Ready');
-  }
 }
 
 /* ── Workfront import (mock) ─────────────────────────────────────── */
@@ -1814,10 +1709,6 @@ function setField(id, val) { const el = document.getElementById(id); if (el) el.
 function clearForm() {
   ['f-product','f-season','f-audience','f-goal','f-tone','f-brand','f-campaign','f-messages']
     .forEach(id => setField(id, ''));
-  pdfFile = null;
-  document.getElementById('pdf-filename').textContent = '';
-  document.getElementById('btn-extract').disabled = true;
-  document.getElementById('pdf-input').value = '';
   if (document.getElementById('assembly-container')) {
     document.getElementById('assembly-container').style.display = 'none';
   }
@@ -2057,7 +1948,6 @@ function setStep(name, state) {
 function setRunning(val) {
   isRunning = val;
   document.getElementById('btn-generate').disabled = val;
-  document.getElementById('btn-extract').disabled = val || !pdfFile;
   document.getElementById('btn-workfront').disabled = val;
   if (!val && currentResult) {
     const activeVisual = (currentResult.visual_versions && currentResult.visual_versions.length > 0) 
